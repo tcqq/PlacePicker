@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:ignore="PxUsage">
+
+    <View
+        android:id="@+id/view"
+        android:layout_width="match_parent"
+        android:layout_height="1255px"
+        android:background="@color/md_blue_600" />
+
+    <LinearLayout
+        android:id="@+id/select_marker_location"
+        android:layout_width="match_parent"
+        android:layout_height="203px"
+        android:background="#F1F1F1"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="42px"
+        android:paddingEnd="42px"
+        app:layout_anchor="@+id/view"
+        app:layout_anchorGravity="bottom|center">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:layout_width="68px"
+            android:layout_height="68px"
+            app:srcCompat="@drawable/ic_location_on_black_24dp"
+            app:tint="@color/md_grey_600" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="84px"
+            android:text="@string/select_this_place"
+            android:textAppearance="?attr/textAppearanceSubtitle1"
+            android:textSize="43px" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/bottom_sheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/md_white_1000"
+        app:layout_anchorGravity="bottom|center"
+        app:layout_behavior="@string/bottom_sheet_behavior">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
