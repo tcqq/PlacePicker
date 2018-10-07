@@ -1,4 +1,4 @@
-package com.tcqq.placepicker
+package com.tcqq.placepicker.utils
 
 import android.app.Activity
 import android.content.Context
@@ -89,7 +89,7 @@ object AutoUtils {
 
     fun autoMargin(view: View) {
         if (view.layoutParams !is ViewGroup.MarginLayoutParams) return
-        val lp = view.layoutParams as ViewGroup.MarginLayoutParams ?: return
+        val lp = view.layoutParams as ViewGroup.MarginLayoutParams
         lp.leftMargin = getDisplayWidthValue(lp.leftMargin)
         lp.topMargin = getDisplayHeightValue(lp.topMargin)
         lp.rightMargin = getDisplayWidthValue(lp.rightMargin)

@@ -6,53 +6,130 @@
     android:layout_height="match_parent"
     tools:ignore="PxUsage">
 
-    <View
-        android:id="@+id/view"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="1255px"
-        android:background="@color/md_blue_600" />
+        android:layout_height="match_parent"
+        android:background="@color/md_red_700">
 
-    <LinearLayout
-        android:id="@+id/select_marker_location"
-        android:layout_width="match_parent"
-        android:layout_height="203px"
-        android:background="#F1F1F1"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="42px"
-        android:paddingEnd="42px"
-        app:layout_anchor="@+id/view"
-        app:layout_anchorGravity="bottom|center">
-
-        <androidx.appcompat.widget.AppCompatImageView
-            android:layout_width="68px"
-            android:layout_height="68px"
-            app:srcCompat="@drawable/ic_location_on_black_24dp"
-            app:tint="@color/md_grey_600" />
-
-        <androidx.appcompat.widget.AppCompatTextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="84px"
-            android:text="@string/select_this_place"
-            android:textAppearance="?attr/textAppearanceSubtitle1"
-            android:textSize="43px" />
-
-    </LinearLayout>
-
-    <FrameLayout
-        android:id="@+id/bottom_sheet"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/md_white_1000"
-        app:layout_anchorGravity="bottom|center"
-        app:layout_behavior="@string/bottom_sheet_behavior">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view"
+        <FrameLayout
+            android:id="@+id/view"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="1255px"
+            android:background="@color/md_blue_600">
 
-    </FrameLayout>
+            <androidx.cardview.widget.CardView
+                android:id="@+id/search_bar"
+                android:layout_width="match_parent"
+                android:layout_height="157px"
+                android:layout_marginStart="14px"
+                android:layout_marginTop="12px"
+                android:layout_marginEnd="14px"
+                android:background="@color/md_white_1000"
+                app:cardCornerRadius="7px"
+                app:cardUseCompatPadding="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="126px"
+                        android:layout_height="126px"
+                        android:scaleType="center"
+                        app:srcCompat="@drawable/ic_search_black_24dp"
+                        app:tint="@color/icon_general_color" />
+
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="53px"
+                        android:text="@string/search"
+                        android:textAppearance="?attr/textAppearanceBody1"
+                        android:textColor="#80868b"
+                        android:textSize="54px" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/floating_action_button"
+                style="@style/Widget.MaterialComponents.FloatingActionButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="42px"
+                android:layout_marginBottom="45px"
+                app:backgroundTint="@color/md_white_1000"
+                app:srcCompat="@drawable/ic_my_location_black_24dp"
+                app:tint="@color/icon_general_color" />
+
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/select_marker_location"
+            android:layout_width="match_parent"
+            android:layout_height="203px"
+            android:layout_marginTop="1255px"
+            android:background="@color/md_white_1000"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="42px"
+            android:paddingEnd="42px">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="68px"
+                android:layout_height="68px"
+                app:srcCompat="@drawable/ic_location_on_black_24dp"
+                app:tint="@color/icon_general_color" />
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="84px"
+                android:text="@string/select_this_place"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
+                android:textSize="43px" />
+
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/bottom_sheet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#F1F1F1"
+            app:layout_anchorGravity="bottom|center"
+            app:layout_behavior="@string/bottom_sheet_behavior">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+        </FrameLayout>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <View
+            android:id="@+id/status_bar"
+            android:layout_width="match_parent"
+            android:layout_height="0px"
+            android:background="?attr/colorPrimaryDark" />
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorPrimary"
+            tools:visibility="gone" />
+
+    </com.google.android.material.appbar.AppBarLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

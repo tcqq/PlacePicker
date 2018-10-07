@@ -1,11 +1,21 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <style name="ColorfulTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorSecondary">@color/colorSecondary</item>
+
+        <item name="toolbarStyle">@style/ToolbarStyle.Colorful</item>
+    </style>
+
+    <style name="ToolbarStyle.Colorful" parent="Widget.AppCompat.Toolbar">
+        <item name="titleTextAppearance">@style/TitleTextAppearance.Colorful</item>
+    </style>
+
+    <style name="TitleTextAppearance.Colorful" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
+        <item name="android:textColor">@android:color/white</item>
     </style>
 
 </resources>

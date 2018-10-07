@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">PlacePicker</string>
     <string name="select_this_place">Select this place</string>
+    <string name="search">Search</string>
+    <string name="choose_a_nearby_place">Choose a nearby place</string>
+    <string name="or_choose_a_nearby_place">Or choose a nearby place</string>
 </resources>

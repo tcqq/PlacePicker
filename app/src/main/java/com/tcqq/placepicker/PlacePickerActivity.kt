@@ -1,36 +1,174 @@
 package com.tcqq.placepicker
 
-import android.content.res.Configuration
-import android.os.Build
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import android.view.MenuItem
+import android.view.View
+import android.widget.FrameLayout
+import android.widget.Toast
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import com.github.florent37.expectanim.ExpectAnim
+import com.github.florent37.expectanim.core.Expectations.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.jakewharton.rxbinding2.view.RxView
+import com.tcqq.placepicker.enums.DebounceTime
+import com.tcqq.placepicker.utils.AutoUtils
+import com.tcqq.placepicker.utils.BarUtils
+import com.tcqq.placepicker.utils.ConvertUtils
+import com.tcqq.placepicker.utils.ScreenUtils
+import com.tcqq.placepicker.utils.notch.NotchCompat
+import com.trello.rxlifecycle2.android.ActivityEvent
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager
 import eu.davidea.flexibleadapter.items.IFlexible
+import io.reactivex.Observable
+import io.reactivex.ObservableOnSubscribe
+import io.reactivex.Observer
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 import kotlinx.android.synthetic.main.activity_place_picker.*
+import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 
 /**
  * @author Alan Dreamer
  * @since 17/09/2018 Created
  */
-class PlacePickerActivity : AppCompatActivity() {
+class PlacePickerActivity : BaseActivity() {
+
+    private var showSearchBarAnim: ExpectAnim? = null
+    private var hideSearchBarAnim: ExpectAnim? = null
+    private var isShowSearchBarAnim: Boolean = false
+    private var isHideSearchBarAnim: Boolean = false
+
+    private var showAppBarLayoutAnim: ExpectAnim? = null
+    private var hideAppBarLayoutAnim: ExpectAnim? = null
+    private var isShowAppBarLayoutAnim: Boolean = false
+    private var isHideAppBarLayoutAnim: Boolean = false
+
+    private var behavior: BottomSheetBehavior<FrameLayout>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        AutoUtils.setSize(this, !hasTransparentStatusBar(), 1080, 1920)
+        AutoUtils.setSize(this, !BarUtils.hasTransparentStatusBar(), 1080, 1920)
         setContentView(R.layout.activity_place_picker)
         BarUtils.transparentStatusBar(this)
         AutoUtils.auto(this)
-
-        val behavior = BottomSheetBehavior.from(bottom_sheet)
-        if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            behavior.peekHeight = AutoUtils.getDisplayHeightValue(565)
-        } else {
-            behavior.peekHeight = AutoUtils.getDisplayHeightValue(620)
-        }
+        setActionBar(toolbar)
+        setActionBarTitle(R.string.choose_a_nearby_place)
+        setMenuFromResource(R.menu.menu_place_picker)
+        initView()
         initRecyclerView()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        showSearchBarAnim = null
+        hideSearchBarAnim = null
+        showAppBarLayoutAnim = null
+        hideAppBarLayoutAnim = null
+        if (behavior != null) {
+            behavior!!.setBottomSheetCallback(null)
+            behavior = null
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_search -> Toast.makeText(this, "Autocomplete", Toast.LENGTH_SHORT).show()
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onBackPressed() {
+        if (behavior!!.state == BottomSheetBehavior.STATE_EXPANDED) {
+            behavior!!.state = BottomSheetBehavior.STATE_COLLAPSED
+            return
+        }
+        super.onBackPressed()
+    }
+
+    private fun initView() {
+        behavior = BottomSheetBehavior.from(bottom_sheet)
+
+        showSearchBarAnim = ExpectAnim()
+        hideSearchBarAnim = ExpectAnim()
+
+        showAppBarLayoutAnim = ExpectAnim()
+        hideAppBarLayoutAnim = ExpectAnim()
+
+        if (ScreenUtils.isPortrait(this)) {
+            behavior!!.peekHeight = NotchCompat.hasDisplayCutout(window).let {
+                if (it) AutoUtils.getDisplayHeightValue(464) + BarUtils.getStatusBarHeight()
+                else AutoUtils.getDisplayHeightValue(464)
+            }
+            if (BarUtils.hasTransparentStatusBar()) {
+                val lp = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+                        AutoUtils.getDisplayHeightValue(157))
+                lp.setMargins(AutoUtils.getDisplayWidthValue(14),
+                        BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(12),
+                        AutoUtils.getDisplayWidthValue(14),
+                        0)
+                search_bar!!.layoutParams = lp
+            }
+            RxView
+                    .clicks(search_bar!!)
+                    .throttleFirst(DebounceTime.CLICK_SECONDS.time, TimeUnit.SECONDS)
+                    .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                    .subscribe {
+                        Toast.makeText(this, "Autocomplete", Toast.LENGTH_SHORT).show()
+                    }.isDisposed
+        } else {
+            behavior!!.peekHeight = AutoUtils.getDisplayHeightValue(452)
+        }
+
+        val publishSubject: PublishSubject<Int> = PublishSubject.create()
+
+        behavior!!.setBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+            override fun onSlide(bottomSheet: View, newState: Float) {
+            }
+
+            override fun onStateChanged(bottomSheet: View, slideOffset: Int) {
+                publishSubject.onNext(slideOffset)
+            }
+        })
+
+        publishSubject
+                .switchMap {
+                    return@switchMap getSlideOffsetObservable(it)
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                .subscribe {
+                    when (it) {
+                        BottomSheetBehavior.STATE_DRAGGING -> setSearchBarVisibility(false)
+                        BottomSheetBehavior.STATE_SETTLING -> {
+                        }
+                        BottomSheetBehavior.STATE_EXPANDED -> setAppBarLayoutVisibility(true)
+                        BottomSheetBehavior.STATE_COLLAPSED -> {
+                            setSearchBarVisibility(true)
+                            setAppBarLayoutVisibility(false)
+                        }
+                        BottomSheetBehavior.STATE_HIDDEN -> {
+                        }
+                        BottomSheetBehavior.STATE_HALF_EXPANDED -> {
+                        }
+                    }
+                }.isDisposed
+
+        if (BarUtils.hasTransparentStatusBar()) {
+            status_bar.layoutParams.height = BarUtils.getStatusBarHeight()
+        }
+
+        val lp = CoordinatorLayout.LayoutParams(CoordinatorLayout.LayoutParams.MATCH_PARENT,
+                CoordinatorLayout.LayoutParams.WRAP_CONTENT)
+        lp.setMargins(0,
+                -(status_bar.layoutParams.height + getToolBarHeight()),
+                0,
+                0)
+        app_bar_layout.layoutParams = lp
     }
 
     private fun initRecyclerView() {
@@ -38,8 +176,189 @@ class PlacePickerActivity : AppCompatActivity() {
         recycler_view.layoutManager = SmoothScrollLinearLayoutManager(this)
         recycler_view.adapter = adapter
         recycler_view.setHasFixedSize(true)
+        adapter.addScrollableHeader(NearbyPlacesHeaderItem("SHI"))
     }
 
+    private fun getSlideOffsetObservable(slideOffset: Int): Observable<Int> {
+        return Observable.create(ObservableOnSubscribe<Int> {
+            Timber.d("slideOffset: $slideOffset")
+            it.onNext(slideOffset)
+            it.onComplete()
+        }).subscribeOn(Schedulers.io())
+    }
+
+    /* ============
+     * AppBarLayout
+     * ============ */
+
+    private fun setAppBarLayoutVisibility(visible: Boolean) {
+        Observable
+                .just(visible)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                .subscribe(object : Observer<Boolean> {
+                    override fun onSubscribe(d: Disposable) {
+                        if (hideAppBarLayoutAnim!!.isPlaying && visible) {
+                            Timber.d("Showing appBarLayout - onSubscribe")
+                            isShowAppBarLayoutAnim = true
+                            d.dispose()
+                        } else if (showAppBarLayoutAnim!!.isPlaying && !visible) {
+                            Timber.d("Hiding appBarLayout - onSubscribe")
+                            isHideAppBarLayoutAnim = true
+                            d.dispose()
+                        }
+                    }
+
+                    override fun onNext(aBoolean: Boolean) {
+                        if (aBoolean) {
+                            Timber.d("Showing appBarLayout - onNext")
+                            showAppBarLayoutAnim()
+                        } else {
+                            Timber.d("Hiding appBarLayout - onNext")
+                            hideAppBarLayoutAnim()
+                        }
+                    }
+
+                    override fun onError(e: Throwable) {
+                        Timber.e(e.localizedMessage)
+                    }
+
+                    override fun onComplete() {
+
+                    }
+                })
+    }
+
+    private fun showAppBarLayoutAnim() {
+        showAppBarLayoutAnim = ExpectAnim()
+                .expect(app_bar_layout)
+                .toBe(
+                        topOfParent().withMarginDp(0F),
+                        visible()
+                )
+                .toAnimation()
+                .setDuration(250)
+                .addStartListener {
+                    isHideAppBarLayoutAnim = false
+                }
+                .addEndListener {
+                    if (isHideAppBarLayoutAnim) hideAppBarLayoutAnim()
+                }
+                .start()
+    }
+
+    private fun hideAppBarLayoutAnim() {
+        hideAppBarLayoutAnim = ExpectAnim()
+                .expect(app_bar_layout)
+                .toBe(
+                        topOfParent().withMarginDp(ConvertUtils.px2dp(
+                                this@PlacePickerActivity,
+                                -(status_bar.layoutParams.height + getToolBarHeight()).toFloat()).toFloat()),
+                        invisible()
+                )
+                .toAnimation()
+                .setDuration(200)
+                .addStartListener {
+                    isShowAppBarLayoutAnim = false
+                }
+                .addEndListener {
+                    if (isShowAppBarLayoutAnim) showAppBarLayoutAnim()
+                }
+                .start()
+    }
+
+    /* =========
+     * SearchBar
+     * ========= */
+
+    private fun setSearchBarVisibility(visible: Boolean) {
+        Observable
+                .just(visible)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                .doOnSubscribe { t ->
+                    if (!ScreenUtils.isPortrait(this)) {
+                        t.dispose()
+                    }
+                }
+                .subscribe(object : Observer<Boolean> {
+                    override fun onSubscribe(d: Disposable) {
+                        if (hideSearchBarAnim!!.isPlaying && visible) {
+                            Timber.d("Showing searchBar - onSubscribe")
+                            isShowSearchBarAnim = true
+                            d.dispose()
+                        } else if (showSearchBarAnim!!.isPlaying && !visible) {
+                            Timber.d("Hiding searchBar - onSubscribe")
+                            isHideSearchBarAnim = true
+                            d.dispose()
+                        }
+                    }
+
+                    override fun onNext(aBoolean: Boolean) {
+                        if (aBoolean) {
+                            Timber.d("Showing searchBar - onNext")
+                            showSearchBarAnim()
+                        } else {
+                            Timber.d("Hiding searchBar - onNext")
+                            hideSearchBarAnim()
+                        }
+                    }
+
+                    override fun onError(e: Throwable) {
+                        Timber.e(e.localizedMessage)
+                    }
+
+                    override fun onComplete() {
+
+                    }
+                })
+    }
+
+    private fun showSearchBarAnim() {
+        showSearchBarAnim = ExpectAnim()
+                .expect(search_bar)
+                .toBe(
+                        topOfParent().withMarginDp(ConvertUtils.px2dp(
+                                this@PlacePickerActivity,
+                                (BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(12)).toFloat()).toFloat()),
+                        visible()
+                )
+                .toAnimation()
+                .setDuration(450)
+                .addStartListener {
+                    isHideSearchBarAnim = false
+                }
+                .addEndListener {
+                    if (isHideSearchBarAnim) hideSearchBarAnim()
+                }
+                .start()
+    }
+
+    private fun hideSearchBarAnim() {
+        hideSearchBarAnim = ExpectAnim()
+                .expect(search_bar)
+                .toBe(
+                        topOfParent().withMarginDp(ConvertUtils.px2dp(
+                                this@PlacePickerActivity,
+                                -(BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(12 + 157)).toFloat()).toFloat()),
+                        invisible()
+                )
+                .toAnimation()
+                .setDuration(500)
+                .addStartListener {
+                    isShowSearchBarAnim = false
+                }
+                .addEndListener {
+                    if (isShowSearchBarAnim) showSearchBarAnim()
+                }
+                .start()
+    }
+
+    /* ============
+     * Example data
+     * ============ */
     private fun getNearbyPlacesItems(): List<IFlexible<*>> {
         val items = ArrayList<IFlexible<*>>()
         items.add(NearbyPlacesItem("1", "A"))
@@ -60,10 +379,11 @@ class PlacePickerActivity : AppCompatActivity() {
         return items
     }
 
-    /**
-     * Whether to support transparent status bar.
-     */
-    private fun hasTransparentStatusBar(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+    private fun getToolBarHeight(): Int {
+        val attrs = intArrayOf(R.attr.actionBarSize)
+        val ta = obtainStyledAttributes(attrs)
+        val toolBarHeight = ta.getDimensionPixelSize(0, -1)
+        ta.recycle()
+        return toolBarHeight
     }
 }

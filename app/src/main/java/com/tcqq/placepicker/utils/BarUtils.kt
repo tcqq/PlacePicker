@@ -1,10 +1,8 @@
-package com.tcqq.placepicker
+package com.tcqq.placepicker.utils
 
 import android.app.Activity
-import android.content.Context
 import android.content.res.Resources
 import android.graphics.Color
-import android.graphics.Point
 import android.os.Build
 import android.view.View
 import android.view.WindowManager
@@ -16,7 +14,7 @@ import android.view.WindowManager
 object BarUtils {
 
     fun transparentStatusBar(activity: Activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (hasTransparentStatusBar()) {
             val window = activity.window
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -41,12 +39,17 @@ object BarUtils {
 
     /**
      * Return the status bar's height.
-     *
-     * @return the status bar's height
      */
     fun getStatusBarHeight(): Int {
         val resources = Resources.getSystem()
         val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
         return resources.getDimensionPixelSize(resourceId)
+    }
+
+    /**
+     * Whether to support transparent status bar.
+     */
+    fun hasTransparentStatusBar(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
     }
 }
