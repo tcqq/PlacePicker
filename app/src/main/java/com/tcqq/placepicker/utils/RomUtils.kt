@@ -1,11 +1,11 @@
-package com.tcqq.placepicker.utils.notch
+package com.tcqq.placepicker.utils
 
 import android.os.Build
 import java.util.*
 
 /**
- * Created by feifan on 2017/2/10.
- * Contacts me:404619986@qq.com
+ * @author Alan Dreamer
+ * @since 08/10/2018 Created
  */
 object RomUtils {
 
@@ -22,14 +22,14 @@ object RomUtils {
         get() {
             val a = getSystemProperty("ro.product.brand")
             return !a.isNullOrEmpty()
-                && a!!.toLowerCase(Locale.getDefault()).contains("oppo")
+                    && a!!.toLowerCase(Locale.getDefault()).contains("oppo")
         }
 
     val isVivoRom: Boolean
         get() {
             val a = getSystemProperty("ro.vivo.os.name")
             return !a.isNullOrEmpty()
-                && a!!.toLowerCase(Locale.getDefault()).contains("funtouch")
+                    && a!!.toLowerCase(Locale.getDefault()).contains("funtouch")
         }
 
     private fun getSystemProperty(propName: String): String? {

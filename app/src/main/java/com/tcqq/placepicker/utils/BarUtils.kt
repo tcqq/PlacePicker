@@ -52,4 +52,23 @@ object BarUtils {
     fun hasTransparentStatusBar(): Boolean {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // navigation bar
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Return the navigation bar's height.
+     *
+     * @return the navigation bar's height
+     */
+    fun getNavBarHeight(): Int {
+        val res = Resources.getSystem()
+        val resourceId = res.getIdentifier("navigation_bar_height", "dimen", "android")
+        return if (resourceId != 0) {
+            res.getDimensionPixelSize(resourceId)
+        } else {
+            0
+        }
+    }
 }

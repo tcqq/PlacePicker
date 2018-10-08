@@ -1,21 +1,20 @@
 package com.tcqq.placepicker
 
 import android.os.Bundle
+import android.provider.Settings
 import android.view.MenuItem
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.lifecycle.ViewModelProviders
 import com.github.florent37.expectanim.ExpectAnim
 import com.github.florent37.expectanim.core.Expectations.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.jakewharton.rxbinding2.view.RxView
 import com.tcqq.placepicker.enums.DebounceTime
-import com.tcqq.placepicker.utils.AutoUtils
-import com.tcqq.placepicker.utils.BarUtils
-import com.tcqq.placepicker.utils.ConvertUtils
-import com.tcqq.placepicker.utils.ScreenUtils
-import com.tcqq.placepicker.utils.notch.NotchCompat
+import com.tcqq.placepicker.utils.*
+import com.tcqq.placepicker.viewmodel.PlacePickerViewModel
 import com.trello.rxlifecycle2.android.ActivityEvent
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager
@@ -49,6 +48,7 @@ class PlacePickerActivity : BaseActivity() {
     private var isHideAppBarLayoutAnim: Boolean = false
 
     private var behavior: BottomSheetBehavior<FrameLayout>? = null
+    private var fullScreenForXiaoMi: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,6 +61,20 @@ class PlacePickerActivity : BaseActivity() {
         setMenuFromResource(R.menu.menu_place_picker)
         initView()
         initRecyclerView()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (RomUtils.isMiuiRom) {
+            val fullScreen = Settings.Global.getInt(contentResolver, "force_fsg_nav_bar", 0) != 0
+            if (fullScreenForXiaoMi != fullScreen) {
+                fullScreenForXiaoMi = fullScreen
+                ViewModelProviders.of(this).get(PlacePickerViewModel::class.java).peekHeight.value = fullScreen.let {
+                    if (it) AutoUtils.getDisplayHeightValue(464) + BarUtils.getNavBarHeight()
+                    else AutoUtils.getDisplayHeightValue(464)
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -77,7 +91,7 @@ class PlacePickerActivity : BaseActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.action_search -> Toast.makeText(this, "Autocomplete", Toast.LENGTH_SHORT).show()
+            R.id.action_search -> Toast.makeText(this, "autocomplete", Toast.LENGTH_SHORT).show()
         }
         return super.onOptionsItemSelected(item)
     }
@@ -100,10 +114,26 @@ class PlacePickerActivity : BaseActivity() {
         hideAppBarLayoutAnim = ExpectAnim()
 
         if (ScreenUtils.isPortrait(this)) {
-            behavior!!.peekHeight = NotchCompat.hasDisplayCutout(window).let {
-                if (it) AutoUtils.getDisplayHeightValue(464) + BarUtils.getStatusBarHeight()
-                else AutoUtils.getDisplayHeightValue(464)
+            val model = ViewModelProviders.of(this).get(PlacePickerViewModel::class.java)
+            if (RomUtils.isMiuiRom) {
+                val fullScreen = Settings.Global.getInt(contentResolver, "force_fsg_nav_bar", 0) != 0
+                Timber.d("Full screen: $fullScreen")
+                fullScreenForXiaoMi = fullScreen
+                model.peekHeight.value = fullScreen.let {
+                    if (it) {
+                        AutoUtils.getDisplayHeightValue(464) + BarUtils.getNavBarHeight()
+                    } else {
+                        AutoUtils.getDisplayHeightValue(464)
+                    }
+                }
+            } else {
+                model.peekHeight.value = AutoUtils.getDisplayHeightValue(464)
             }
+
+            model.peekHeight.observe(this, androidx.lifecycle.Observer<Int> {
+                behavior!!.peekHeight = it
+            })
+
             if (BarUtils.hasTransparentStatusBar()) {
                 val lp = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
                         AutoUtils.getDisplayHeightValue(157))
@@ -118,7 +148,7 @@ class PlacePickerActivity : BaseActivity() {
                     .throttleFirst(DebounceTime.CLICK_SECONDS.time, TimeUnit.SECONDS)
                     .compose(bindUntilEvent(ActivityEvent.DESTROY))
                     .subscribe {
-                        Toast.makeText(this, "Autocomplete", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "autocomplete", Toast.LENGTH_SHORT).show()
                     }.isDisposed
         } else {
             behavior!!.peekHeight = AutoUtils.getDisplayHeightValue(452)
