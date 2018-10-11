@@ -1,4 +1,4 @@
-package com.tcqq.placepicker
+package com.tcqq.placepicker.activity
 
 import android.annotation.SuppressLint
 import android.graphics.Color
@@ -13,10 +13,10 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import com.tcqq.placepicker.R
 import com.tcqq.placepicker.utils.MenuColorize
 import com.tcqq.placepicker.viewmodel.FrameViewModel
 import com.trello.rxlifecycle2.components.support.RxAppCompatActivity
-import kotlinx.android.synthetic.main.activity_place_picker.*
 
 
 /**
@@ -35,6 +35,7 @@ abstract class BaseActivity : RxAppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         val model = ViewModelProviders.of(this).get(FrameViewModel::class.java)
         model.menuResId.observe(this, Observer<Int> { menuResId ->
+            val toolbar = findViewById<Toolbar>(R.id.toolbar)
             toolbar.menu.clear()
             menuInflater.inflate(menuResId, menu)
             MenuColorize.colorMenu(this, menu, ContextCompat.getColor(this, android.R.color.white))

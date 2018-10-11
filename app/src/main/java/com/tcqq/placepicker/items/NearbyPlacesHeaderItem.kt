@@ -1,9 +1,11 @@
-package com.tcqq.placepicker
+package com.tcqq.placepicker.items
 
 import android.content.res.Configuration
 import android.view.View
+import android.widget.ProgressBar
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
+import com.tcqq.placepicker.R
 import com.tcqq.placepicker.utils.AutoUtils
 import com.tcqq.placepicker.utils.BarUtils
 import eu.davidea.flexibleadapter.FlexibleAdapter
@@ -45,5 +47,6 @@ data class NearbyPlacesHeaderItem(val id: String) : AbstractFlexibleItem<NearbyP
 
     class ViewHolder(view: View, adapter: FlexibleAdapter<*>) : FlexibleViewHolder(view, adapter) {
         var root: ConstraintLayout = view.findViewById(R.id.root)
+        var progressbar: ProgressBar = view.findViewById(R.id.progressbar)
     }
 }

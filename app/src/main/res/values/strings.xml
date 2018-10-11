@@ -4,4 +4,8 @@
     <string name="search">Search</string>
     <string name="choose_a_nearby_place">Choose a nearby place</string>
     <string name="or_choose_a_nearby_place">Or choose a nearby place</string>
+    <string name="start">Start</string>
+    <string name="permission_access_find_location">PlacePicker needs location access to get location information.</string>
+    <string name="permissions_required_title">Permissions Required</string>
+    <string name="permissions_required_content">This app may not work correctly without the requested permissions. Open the app settings screen to modify app permissions.</string>
 </resources>

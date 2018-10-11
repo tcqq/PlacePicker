@@ -63,8 +63,15 @@ dependencies {
     implementation 'eu.davidea:flexible-adapter-livedata:1.0.0-b3'
     implementation 'eu.davidea:flexible-adapter-databinding:1.0.0'
 
+    //AMap API - https://mvnrepository.com/artifact/com.amap.api
+    implementation 'com.amap.api:3dmap:6.4.1'
+    implementation 'com.amap.api:location:4.2.0'
+    implementation 'com.amap.api:search:6.1.0'
+
     //描述你的动画并运行! - https://github.com/florent37/ExpectAnim
     implementation 'com.github.florent37:expectanim:1.0.7'
     //一个具有小型可扩展API的记录器 - https://github.com/JakeWharton/timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
+    //简化Android M系统权限 - https://github.com/googlesamples/easypermissions
+    implementation 'pub.devrel:easypermissions:2.0.0'
 }

@@ -1,8 +1,9 @@
-package com.tcqq.placepicker
+package com.tcqq.placepicker.items
 
 import android.view.View
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.recyclerview.widget.RecyclerView
+import com.tcqq.placepicker.R
 import com.tcqq.placepicker.utils.AutoUtils
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.items.AbstractFlexibleItem

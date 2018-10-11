@@ -8,14 +8,17 @@
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/md_red_700">
+        android:layout_height="match_parent">
 
         <FrameLayout
-            android:id="@+id/view"
             android:layout_width="match_parent"
-            android:layout_height="1255px"
-            android:background="@color/md_blue_600">
+            android:layout_height="wrap_content">
+
+            <com.amap.api.maps.MapView
+                android:id="@+id/map_view"
+                android:layout_width="match_parent"
+                android:layout_height="1255px"
+                tools:background="@color/md_blue_600" />
 
             <androidx.cardview.widget.CardView
                 android:id="@+id/search_bar"
@@ -63,8 +66,17 @@
                 android:layout_marginEnd="42px"
                 android:layout_marginBottom="45px"
                 app:backgroundTint="@color/md_white_1000"
+                app:rippleColor="?attr/colorControlNormal"
                 app:srcCompat="@drawable/ic_my_location_black_24dp"
                 app:tint="@color/icon_general_color" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/selected_location_marker"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginBottom="70px"
+                app:srcCompat="@drawable/ic_redpin" />
 
         </FrameLayout>
 
@@ -98,10 +110,11 @@
         <FrameLayout
             android:id="@+id/bottom_sheet"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:background="#F1F1F1"
             app:layout_anchorGravity="bottom|center"
-            app:layout_behavior="@string/bottom_sheet_behavior">
+            app:layout_behavior="@string/bottom_sheet_behavior"
+            tools:layout_height="wrap_content">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_view"
