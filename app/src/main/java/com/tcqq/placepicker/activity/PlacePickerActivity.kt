@@ -26,11 +26,13 @@ import com.amap.api.services.geocoder.RegeocodeResult
 import com.github.florent37.expectanim.ExpectAnim
 import com.github.florent37.expectanim.core.Expectations.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.gson.Gson
 import com.jakewharton.rxbinding2.view.RxView
-import com.tcqq.placepicker.items.NearbyPlacesHeaderItem
-import com.tcqq.placepicker.items.NearbyPlacesItem
 import com.tcqq.placepicker.R
 import com.tcqq.placepicker.enums.DebounceTime
+import com.tcqq.placepicker.enums.MapDimension
+import com.tcqq.placepicker.items.NearbyPlacesHeaderItem
+import com.tcqq.placepicker.items.NearbyPlacesItem
 import com.tcqq.placepicker.utils.*
 import com.tcqq.placepicker.viewmodel.PlacePickerViewModel
 import com.trello.rxlifecycle2.android.ActivityEvent
@@ -48,13 +50,14 @@ import kotlinx.android.synthetic.main.activity_place_picker.*
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
-
 /**
  * @author Alan Dreamer
  * @since 17/09/2018 Created
  */
 class PlacePickerActivity : BaseActivity(),
-        FlexibleAdapter.OnItemClickListener {
+        FlexibleAdapter.OnItemClickListener,
+        AMap.OnCameraChangeListener,
+        DeviceCompass.OnOrientationChangedEventListener {
 
     private var adapter: FlexibleAdapter<IFlexible<*>>? = null
     private var items = ArrayList<IFlexible<*>>()
@@ -69,16 +72,37 @@ class PlacePickerActivity : BaseActivity(),
     private var isShowAppBarLayoutAnim: Boolean = false
     private var isHideAppBarLayoutAnim: Boolean = false
 
+    private var showScaleViewAnim: ExpectAnim? = null
+    private var hideScaleViewAnim: ExpectAnim? = null
+    private var isShowScaleViewAnim: Boolean = false
+    private var isHideScaleViewAnim: Boolean = false
+
     private var behavior: BottomSheetBehavior<FrameLayout>? = null
     private var fullScreenForXiaoMi: Boolean = false
 
     private lateinit var aMap: AMap
+    private lateinit var uiSettings: UiSettings
+    private lateinit var myLocationStyle: MyLocationStyle
     private var locationClient: AMapLocationClient? = null
     private var locationOption: AMapLocationClientOption? = null
     private var location: AMapLocation? = null
-    private var locationGpsMarker: Marker? = null
-    private var locationChanged = false
+    private var markers: List<Marker>? = null
+    private var circle: Circle? = null
+    private var locationLocked = true
     private var geocodeSearch: GeocodeSearch? = null
+
+    private var zoom = 16F
+    private lateinit var cameraChangePublishSubject: PublishSubject<CameraPosition>
+    private lateinit var cameraChangeFinishPublishSubject: PublishSubject<CameraPosition>
+    private lateinit var cameraChangeFinishFixPublishSubject: PublishSubject<CameraPosition>
+    private var cameraPosition: CameraPosition? = null
+
+    private var gson: Gson? = null
+
+    private var deviceCompass: DeviceCompass? = null
+    private lateinit var azimuthPublishSubject: PublishSubject<Float>
+
+    private var mapDimension: MapDimension = MapDimension.TWO_DIMENSIONAL
 
     override fun onSaveInstanceState(outState: Bundle?) {
         super.onSaveInstanceState(outState)
@@ -115,21 +139,24 @@ class PlacePickerActivity : BaseActivity(),
         }
         map_view.onResume()
         startLocation()
+        deviceCompass?.startListening()
     }
 
     override fun onPause() {
         super.onPause()
         map_view.onPause()
         stopLocation()
+        deviceCompass?.stopListening()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        //Anim & Widget
         showSearchBarAnim = null
         hideSearchBarAnim = null
         showAppBarLayoutAnim = null
         hideAppBarLayoutAnim = null
+        showScaleViewAnim = null
+        hideScaleViewAnim = null
         if (behavior != null) {
             behavior!!.setBottomSheetCallback(null)
             behavior = null
@@ -137,6 +164,9 @@ class PlacePickerActivity : BaseActivity(),
         if (adapter != null) {
             adapter!!.mItemClickListener = null
             adapter = null
+        }
+        if (gson != null) {
+            gson = null
         }
         //Map
         stopLocation()
@@ -149,11 +179,17 @@ class PlacePickerActivity : BaseActivity(),
         if (geocodeSearch != null) {
             geocodeSearch = null
         }
+        if (circle != null) {
+            circle = null
+        }
+        if (cameraPosition != null) {
+            cameraPosition = null
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.action_search -> Toast.makeText(this, "autocomplete", Toast.LENGTH_SHORT).show()
+            R.id.action_search -> openAutocomplete()
         }
         return super.onOptionsItemSelected(item)
     }
@@ -171,15 +207,16 @@ class PlacePickerActivity : BaseActivity(),
 
         showSearchBarAnim = ExpectAnim()
         hideSearchBarAnim = ExpectAnim()
-
         showAppBarLayoutAnim = ExpectAnim()
         hideAppBarLayoutAnim = ExpectAnim()
+        showScaleViewAnim = ExpectAnim()
+        hideScaleViewAnim = ExpectAnim()
+
+        gson = Gson()
 
         if (ScreenUtils.isPortrait(this)) {
             val model = ViewModelProviders.of(this).get(PlacePickerViewModel::class.java)
             if (RomUtils.isMiuiRom) {
-                Timber.d("Is Xiaomi")
-                Toast.makeText(this, "Is Xiaomi", Toast.LENGTH_SHORT).show()
                 val fullScreen = Settings.Global.getInt(contentResolver, "force_fsg_nav_bar", 0) != 0
                 Timber.d("Full screen: $fullScreen")
                 fullScreenForXiaoMi = fullScreen
@@ -191,8 +228,6 @@ class PlacePickerActivity : BaseActivity(),
                     }
                 }
             } else {
-                Timber.d("Not Xiaomi")
-                Toast.makeText(this, "Not Xiaomi", Toast.LENGTH_SHORT).show()
                 model.peekHeight.value = AutoUtils.getDisplayHeightValue(464)
             }
 
@@ -215,7 +250,7 @@ class PlacePickerActivity : BaseActivity(),
                     .observeOn(AndroidSchedulers.mainThread())
                     .compose(bindUntilEvent(ActivityEvent.DESTROY))
                     .subscribe {
-                        Toast.makeText(this, "autocomplete", Toast.LENGTH_SHORT).show()
+                        openAutocomplete()
                     }.isDisposed
         } else {
             behavior!!.peekHeight = AutoUtils.getDisplayHeightValue(452)
@@ -267,21 +302,36 @@ class PlacePickerActivity : BaseActivity(),
                 0)
         app_bar_layout.layoutParams = appBarLayoutLayoutParams
 
-        RxView
-                .clicks(floating_action_button)
-                .throttleFirst(DebounceTime.CLICK_SECONDS.time, TimeUnit.SECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
-                .compose(bindUntilEvent(ActivityEvent.DESTROY))
-                .subscribe {
-                    locationChanged = false
-                    if (location == null) {
-                        startLocation()
-                    } else {
-                        locationSuccessTask()
+        floating_action_button.setOnClickListener {
+            when (mapDimension) {
+                MapDimension.TWO_DIMENSIONAL -> {
+                    if (locationLocked) {
+                        zoom = 18F
+                        mapDimension = MapDimension.THREE_DIMENSIONAL
+                        floating_action_button.setImageResource(R.drawable.ic_explore_black_24dp)
+                        aMap.myLocationStyle = myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_MAP_ROTATE_NO_CENTER)
                     }
-                }.isDisposed
+                }
+                MapDimension.THREE_DIMENSIONAL -> {
+                    if (locationLocked) {
+                        zoom = 16F
+                        mapDimension = MapDimension.TWO_DIMENSIONAL
+                        floating_action_button.setImageResource(R.drawable.ic_my_location_black_24dp)
+                        aMap.myLocationStyle = myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_SHOW)
+                    }
+                }
+            }
+
+            setLocationLock(true)
+            if (location == null) {
+                startLocation()
+            } else {
+                resetLocationMarker(location!!)
+                moveMapCamera(location!!)
+            }
+        }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            floating_action_button.setColorFilter(Color.parseColor("#757575"))
+            floating_action_button.setColorFilter(ThemeUtils.getThemeValue(R.attr.colorSecondary, this))
         }
     }
 
@@ -301,7 +351,6 @@ class PlacePickerActivity : BaseActivity(),
         return Observable.create(ObservableOnSubscribe<Int> {
             Timber.d("slideOffset: $slideOffset")
             it.onNext(slideOffset)
-            it.onComplete()
         }).subscribeOn(Schedulers.io())
     }
 
@@ -309,30 +358,165 @@ class PlacePickerActivity : BaseActivity(),
      * AMap
      * ==== */
 
+    override fun onCameraChangeFinish(cameraPosition: CameraPosition) {
+        Timber.d("onCameraChangeFinish > cameraPosition: $cameraPosition")
+    }
+
+    //FIXME: Using 3D maps will enter an infinite loop
+    override fun onCameraChange(cameraPosition: CameraPosition) {
+        Timber.v("onCameraChange > cameraPosition: $cameraPosition")
+        cameraChangePublishSubject.onNext(cameraPosition)
+    }
+
+    override fun onOrientationChanged(azimuth: Float, pitch: Float, roll: Float) {
+        azimuthPublishSubject.onNext(azimuth)
+    }
+
     private fun initMapView(savedInstanceState: Bundle?) {
         map_view.onCreate(savedInstanceState)
+        myLocationStyle = MyLocationStyle()
         aMap = map_view.map
-        val uiSettings: UiSettings = aMap.uiSettings
-        uiSettings.isZoomControlsEnabled = false//是否显示地图中放大缩小按钮
-        uiSettings.isMyLocationButtonEnabled = false//是否显示默认的定位按钮
-        uiSettings.isScaleControlsEnabled = false//是否显示缩放级别
         aMap.isMyLocationEnabled = false//是否可触发定位并显示定位层
         aMap.setMapLanguage(AMap.CHINESE)
-        aMap.setOnCameraChangeListener(object : AMap.OnCameraChangeListener {
-            override fun onCameraChangeFinish(cameraPosition: CameraPosition?) {
-                Timber.v("onCameraChangeFinish")
-//                setLoadingStatus(true)
-                if (location != null && cameraPosition != null) {
-                    queryNearbyPlaces(cameraPosition.target.latitude, cameraPosition.target.longitude)
-                } else {
-                    Timber.e("location or cameraPosition is empty")
-                }
+        aMap.myLocationStyle = myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_SHOW)
+        aMap.setOnCameraChangeListener(this)
+        aMap.setAMapGestureListener(object : AMapGestureListener {
+            //单指按下
+            override fun onDown(x: Float, y: Float) {
+                Timber.v("AMapGestureListener > onDown")
             }
 
-            override fun onCameraChange(cameraPosition: CameraPosition?) {
-                Timber.v("onCameraChange")
+            //单指双击
+            override fun onDoubleTap(x: Float, y: Float) {
+                Timber.v("AMapGestureListener > onDoubleTap")
+            }
+
+            //单指惯性滑动
+            override fun onFling(x: Float, y: Float) {
+                Timber.v("AMapGestureListener > onFling")
+            }
+
+            //单指单击
+            override fun onSingleTap(x: Float, y: Float) {
+                Timber.v("AMapGestureListener > onSingleTap")
+            }
+
+            //单指滑动
+            override fun onScroll(x: Float, y: Float) {
+                setLocationLock(false)
+                Timber.v("AMapGestureListener > onScroll")
+            }
+
+            //地图稳定下来会回到此接口
+            override fun onMapStable() {
+                Timber.v("AMapGestureListener > onMapStable")
+            }
+
+            //单指抬起
+            override fun onUp(x: Float, y: Float) {
+                Timber.v("AMapGestureListener > onUp")
+            }
+
+            //长按
+            override fun onLongPress(x: Float, y: Float) {
+                Timber.v("AMapGestureListener > onLongPress")
             }
         })
+
+        uiSettings = aMap.uiSettings
+        uiSettings.isZoomControlsEnabled = false//是否显示地图中放大缩小按钮
+        uiSettings.isMyLocationButtonEnabled = false//是否显示默认的定位按钮
+        uiSettings.isScaleControlsEnabled = true//是否显示缩放级别
+        uiSettings.isScaleControlsEnabled = false//是否可见比例尺控件
+        uiSettings.setZoomInByScreenCenter(true)
+        if (ScreenUtils.isPortrait(this)) {
+            uiSettings.setLogoBottomMargin(AutoUtils.getDisplayHeightValue(45))
+            uiSettings.setLogoLeftMargin(AutoUtils.getDisplayHeightValue(42))
+        } else {
+            uiSettings.setLogoBottomMargin(AutoUtils.getDisplayHeightValue(75))
+            uiSettings.setLogoLeftMargin(AutoUtils.getDisplayHeightValue(25))
+        }
+
+        cameraChangePublishSubject = PublishSubject.create()
+        cameraChangePublishSubject
+                .doOnNext {
+                    Timber.d("cameraChangePublishSubject#doOnNext > $it")
+                    when (mapDimension) {
+                        MapDimension.TWO_DIMENSIONAL -> cameraChangeFinishPublishSubject.onNext(it)
+                        MapDimension.THREE_DIMENSIONAL -> cameraChangeFinishFixPublishSubject.onNext(it)
+                    }
+                }
+                .filter {
+                    zoom != it.zoom
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                .subscribe {
+                    Timber.d("cameraChangePublishSubject#onNext > show scaleView")
+                    zoom = it.zoom
+                    scale_view.update(it.zoom, it.target.latitude)
+                    setScaleViewVisibility(true)
+                }.isDisposed
+
+        cameraChangeFinishPublishSubject = PublishSubject.create()
+        cameraChangeFinishPublishSubject
+                .debounce(300, TimeUnit.MILLISECONDS)
+                .subscribeOn(Schedulers.io())
+                .doOnNext {
+                    Timber.d("cameraChangePublishSubject#cameraChangeFinishPublishSubject")
+                    queryNearbyPlaces(it.target.latitude, it.target.longitude)
+                }
+                .debounce(2700, TimeUnit.MILLISECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                .subscribe {
+                    Timber.d("cameraChangePublishSubject#cameraChangeFinishFixPublishSubject > hide scaleView")
+                    setScaleViewVisibility(false)
+                }.isDisposed
+
+        //Fix maps switched from 2D to 3D cause problem. https://lbs.amap.com/dev/ticket/list/opened
+        cameraChangeFinishFixPublishSubject = PublishSubject.create()
+        cameraChangeFinishFixPublishSubject
+                .throttleFirst(1, TimeUnit.SECONDS)
+                .filter {
+                    cameraPosition != it
+                }
+                .subscribeOn(Schedulers.io())
+                .doOnNext {
+                    Timber.d("cameraChangePublishSubject#cameraChangeFinishFixPublishSubject > $it")
+                    cameraPosition = it
+                    queryNearbyPlaces(it.target.latitude, it.target.longitude)
+                }
+                .debounce(3, TimeUnit.SECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                .subscribe {
+                    Timber.d("cameraChangePublishSubject#cameraChangeFinishFixPublishSubject > hide scaleView")
+                    setScaleViewVisibility(false)
+                }.isDisposed
+
+        deviceCompass = DeviceCompass(this)
+        deviceCompass!!.setOnOrientationChangedEventListener(this)
+
+        azimuthPublishSubject = PublishSubject.create()
+        azimuthPublishSubject
+                .filter {
+                    if (markers != null) return@filter markers!!.size == 2
+                    else return@filter false
+                }
+                .map {
+                    360 - it
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                .subscribe {
+                    Timber.v("onOrientationChanged > rotateAngle: $it")
+                    markers!![1].rotateAngle = it
+                }.isDisposed
+
+        scale_view.setExpandRtlEnabled(!SystemUtils.isRtl(this))
     }
 
     private fun initLocation() {
@@ -352,10 +536,12 @@ class PlacePickerActivity : BaseActivity(),
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .subscribe {
                     if (it.errorCode == 0) {//可在其中解析AMapLocation获取相应内容。
+                        Timber.v("onLocationChanged")
                         location = it
-                        if (!locationChanged) {
-                            locationSuccessTask()
+                        if (locationLocked) {
+                            moveMapCamera(it)
                         }
+                        resetLocationMarker(it)
                     } else {
                         Timber.e("Location error, Error code: ${it.errorCode}, Error info: ${it.errorInfo}")
                     }
@@ -371,27 +557,54 @@ class PlacePickerActivity : BaseActivity(),
         locationClient?.stopLocation()
     }
 
-    /**
-     * 定位成功后将执行的任务
-     */
-    private fun locationSuccessTask() {
-        moveMapCamera(location!!.latitude, location!!.longitude)
-        refreshLocationMark(location!!.latitude, location!!.longitude)
+    private fun moveMapCamera(location: AMapLocation) {
+        val currentLocation = LatLng(location.latitude, location.longitude)
+        aMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoom))
     }
 
-    private fun moveMapCamera(latitude: Double, longitude: Double) {
-        aMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(latitude, longitude), 16F))
-    }
+    private fun resetLocationMarker(location: AMapLocation) {
+        val currentLocation = LatLng(location.latitude, location.longitude)
+        val accuracy = location.accuracy
+        if (markers == null) {
+            markers = addMarker(currentLocation)
 
-    private fun refreshLocationMark(latitude: Double, longitude: Double) {
-        if (locationGpsMarker == null) {
-            locationGpsMarker = aMap.addMarker(MarkerOptions()
-                    .position(LatLng(latitude, longitude))
-                    .icon(BitmapDescriptorFactory.fromBitmap(BitmapFactory
-                            .decodeResource(resources, R.drawable.ic_bluedot)))
-                    .draggable(true))
+            circle = aMap.addCircle(CircleOptions().center(currentLocation)
+                    .fillColor(Color.argb(50, 65, 135, 245))
+                    .radius(accuracy.toDouble())
+                    .strokeColor(Color.argb(255, 66, 133, 244))
+                    .strokeWidth(0.5f))
+        } else {
+            for (index in markers!!.indices) {
+                markers!![index].position = currentLocation
+            }
+            circle!!.center = currentLocation
+            circle!!.radius = accuracy.toDouble()
         }
-        locationGpsMarker!!.position = LatLng(latitude, longitude)
+    }
+
+    private fun addMarker(point: LatLng): ArrayList<Marker> {
+        val blueDotBitmap = BitmapFactory.decodeResource(this.resources,
+                R.drawable.new_blue_dot)
+        val blueDotIcon = BitmapDescriptorFactory.fromBitmap(blueDotBitmap)
+        val blueDotMarkerOption = MarkerOptions()
+                .position(point)
+                .icon(blueDotIcon)
+                .anchor(0.5F, 0.5F)
+                .setFlat(true)
+
+        val blueConeBitmap = BitmapFactory.decodeResource(this.resources,
+                R.drawable.blue_cone_150)
+        val blueConeIcon = BitmapDescriptorFactory.fromBitmap(blueConeBitmap)
+        val blueConeMarkerOption = MarkerOptions()
+                .position(point)
+                .icon(blueConeIcon)
+                .anchor(0.5F, 0.5F)
+                .setFlat(true)
+
+        val markerOptions = arrayListOf<MarkerOptions>()
+        markerOptions.add(blueDotMarkerOption)
+        markerOptions.add(blueConeMarkerOption)
+        return aMap.addMarkers(markerOptions, false)
     }
 
     private fun getDefaultOption(): AMapLocationClientOption {
@@ -414,15 +627,14 @@ class PlacePickerActivity : BaseActivity(),
         geocodeSearch = GeocodeSearch(this)
         geocodeSearch!!.setOnGeocodeSearchListener(object : GeocodeSearch.OnGeocodeSearchListener {
             override fun onRegeocodeSearched(result: RegeocodeResult?, resultCode: Int) {
-                locationChanged = true
-//                setLoadingStatus(false)
+                Timber.v("onRegeocodeSearched")
                 if (resultCode == 1000) {
                     if (result != null) {
                         val poiItem = result.regeocodeAddress.pois
-                        Timber.d("onRegeocodeSearched result: $poiItem")
+                        Timber.d("onRegeocodeSearched > poiItem: $poiItem")
                         items.clear()
                         for (index in poiItem.indices) {
-                            items.add(NearbyPlacesItem(index.toString(), poiItem[index].title))
+                            items.add(NearbyPlacesItem(index.toString(), poiItem[index].title, poiItem[index].snippet))
                         }
                         adapter!!.updateDataSet(items)
                     }
@@ -448,6 +660,96 @@ class PlacePickerActivity : BaseActivity(),
          */
         val query = RegeocodeQuery(LatLonPoint(latitude, longitude), 1000f, GeocodeSearch.AMAP)
         geocodeSearch!!.getFromLocationAsyn(query)
+    }
+
+    private fun setLocationLock(locked: Boolean) {
+        if (locationLocked != locked) {
+            locationLocked = locked
+            if (locked) {
+                floating_action_button.setColorFilter(ThemeUtils.getThemeValue(R.attr.colorSecondary, this))
+            } else {
+                floating_action_button.setColorFilter(Color.parseColor("#757575"))
+            }
+        }
+    }
+
+    private fun openAutocomplete() {
+        Toast.makeText(this, "autocomplete", Toast.LENGTH_SHORT).show()
+    }
+
+    /* =========
+     * ScaleView
+     * ========= */
+
+    private fun setScaleViewVisibility(visible: Boolean) {
+        Observable
+                .just(visible)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                .subscribe(object : Observer<Boolean> {
+                    override fun onSubscribe(d: Disposable) {
+                        if (hideScaleViewAnim!!.isPlaying && visible) {
+                            Timber.d("Showing scaleView")
+                            isHideScaleViewAnim = true
+                            d.dispose()
+                        }
+                    }
+
+                    override fun onNext(aBoolean: Boolean) {
+                        if (aBoolean) {
+                            Timber.d("Showing scaleView")
+                            showScaleViewAnim()
+                        } else {
+                            Timber.d("Hiding scaleView")
+                            hideScaleViewAnim()
+                        }
+                    }
+
+                    override fun onError(e: Throwable) {
+                        Timber.e(e.localizedMessage)
+                    }
+
+                    override fun onComplete() {
+
+                    }
+                })
+    }
+
+    private fun showScaleViewAnim() {
+        ExpectAnim()
+                .expect(scale_view)
+                .toBe(
+                        visible()
+                )
+                .toAnimation()
+                .setDuration(0)
+                .addStartListener {
+                    isShowScaleViewAnim = false
+                }
+                .addEndListener {
+                    if (isShowScaleViewAnim) {
+                        hideScaleViewAnim()
+                    }
+                }
+                .start()
+    }
+
+    private fun hideScaleViewAnim() {
+        hideScaleViewAnim = ExpectAnim()
+                .expect(scale_view)
+                .toBe(
+                        invisible()
+                )
+                .toAnimation()
+                .setDuration(250)
+                .addStartListener {
+                    isHideScaleViewAnim = false
+                }
+                .addEndListener {
+                    if (isHideScaleViewAnim) showScaleViewAnim()
+                }
+                .start()
     }
 
     /* ============

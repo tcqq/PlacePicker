@@ -6,16 +6,11 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.appcompat.app.AlertDialog
-import com.jakewharton.rxbinding2.view.RxView
 import com.tcqq.placepicker.R
-import com.tcqq.placepicker.enums.DebounceTime
-import com.trello.rxlifecycle2.android.ActivityEvent
-import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 
 const val REQUEST_GAODE_MAP_PERMISSION = 1
 
@@ -31,14 +26,9 @@ class MainActivity : BaseActivity(),
         setContentView(R.layout.activity_main)
         setActionBar(toolbar)
         setActionBarTitle(R.string.app_name)
-        RxView
-                .clicks(button)
-                .throttleFirst(DebounceTime.CLICK_SECONDS.time, TimeUnit.SECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
-                .compose(bindUntilEvent(ActivityEvent.DESTROY))
-                .subscribe {
-                    openPlacePickerForGaodeMap()
-                }.isDisposed
+        button.setOnClickListener {
+            openPlacePickerForGaodeMap()
+        }
     }
 
     @AfterPermissionGranted(REQUEST_GAODE_MAP_PERMISSION)
@@ -59,6 +49,12 @@ class MainActivity : BaseActivity(),
                     getString(R.string.permission_access_find_location),
                     REQUEST_GAODE_MAP_PERMISSION, *permissions)
         }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        // Forward results to EasyPermissions
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
 
     override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {

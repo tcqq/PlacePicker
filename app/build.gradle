@@ -74,4 +74,8 @@ dependencies {
     implementation 'com.jakewharton.timber:timber:4.7.1'
     //简化Android M系统权限 - https://github.com/googlesamples/easypermissions
     implementation 'pub.devrel:easypermissions:2.0.0'
+    //JSON 解析库 - https://github.com/google/gson
+    implementation 'com.google.code.gson:gson:2.8.5'
+    //地图比例尺 - https://github.com/pengrad/MapScaleView
+    implementation 'com.github.pengrad:mapscaleview:1.4.1'
 }

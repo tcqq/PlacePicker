@@ -15,7 +15,8 @@ import eu.davidea.viewholders.FlexibleViewHolder
  * @since 22/09/2018 Created
  */
 data class NearbyPlacesItem(val id: String,
-                            val placeName: String) : AbstractFlexibleItem<NearbyPlacesItem.ViewHolder>() {
+                            val placeName: String,
+                            val placeAddress: String) : AbstractFlexibleItem<NearbyPlacesItem.ViewHolder>() {
 
     override fun getLayoutRes(): Int {
         return R.layout.item_nearby_places
@@ -28,7 +29,12 @@ data class NearbyPlacesItem(val id: String,
 
     override fun bindViewHolder(adapter: FlexibleAdapter<IFlexible<RecyclerView.ViewHolder>>?, holder: ViewHolder?, position: Int, payloads: MutableList<Any>?) {
         if (holder != null) {
-            holder.text.text = placeName
+            holder.placeName.text = placeName
+            holder.placeAddress.text = placeAddress
+            holder.placeAddress.visibility = placeAddress.isBlank().let {
+                if (it) View.GONE
+                else View.VISIBLE
+            }
         }
     }
 
@@ -36,6 +42,7 @@ data class NearbyPlacesItem(val id: String,
      * Used for nearby places.
      */
     class ViewHolder(view: View, adapter: FlexibleAdapter<*>) : FlexibleViewHolder(view, adapter) {
-        var text: AppCompatTextView = view.findViewById(R.id.text)
+        var placeName: AppCompatTextView = view.findViewById(R.id.place_name)
+        var placeAddress: AppCompatTextView = view.findViewById(R.id.place_address)
     }
 }

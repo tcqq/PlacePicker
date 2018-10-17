@@ -57,25 +57,45 @@
 
             </androidx.cardview.widget.CardView>
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/floating_action_button"
-                style="@style/Widget.MaterialComponents.FloatingActionButton"
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_marginEnd="42px"
-                android:layout_marginBottom="45px"
-                app:backgroundTint="@color/md_white_1000"
-                app:rippleColor="?attr/colorControlNormal"
-                app:srcCompat="@drawable/ic_my_location_black_24dp"
-                app:tint="@color/icon_general_color" />
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:orientation="horizontal">
+
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/floating_action_button"
+                    style="@style/Widget.MaterialComponents.FloatingActionButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="42px"
+                    android:layout_marginBottom="45px"
+                    app:backgroundTint="@color/md_white_1000"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:rippleColor="?attr/colorControlNormal"
+                    app:srcCompat="@drawable/ic_my_location_black_24dp"
+                    app:tint="?attr/colorSecondary" />
+
+                <com.github.pengrad.mapscaleview.MapScaleView
+                    android:id="@+id/scale_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="42px"
+                    app:layout_constraintBottom_toBottomOf="@+id/floating_action_button"
+                    app:layout_constraintEnd_toStartOf="@+id/floating_action_button"
+                    app:layout_constraintTop_toTopOf="@+id/floating_action_button"
+                    tools:scale_expandRtl="true" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/selected_location_marker"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:layout_marginBottom="70px"
+                android:layout_marginBottom="42px"
                 app:srcCompat="@drawable/ic_redpin" />
 
         </FrameLayout>
