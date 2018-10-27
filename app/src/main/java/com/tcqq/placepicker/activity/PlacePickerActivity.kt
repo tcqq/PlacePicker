@@ -23,18 +23,18 @@ import com.amap.api.services.geocoder.GeocodeResult
 import com.amap.api.services.geocoder.GeocodeSearch
 import com.amap.api.services.geocoder.RegeocodeQuery
 import com.amap.api.services.geocoder.RegeocodeResult
+import com.tcqq.placepicker.R
+import com.tcqq.placepicker.items.NearbyPlacesHeaderItem
+import com.tcqq.placepicker.items.NearbyPlacesItem
+import com.tcqq.placepicker.enums.DebounceTime
+import com.tcqq.placepicker.enums.MapDimension
+import com.tcqq.placepicker.utils.*
+import com.tcqq.placepicker.viewmodel.PlacePickerViewModel
 import com.github.florent37.expectanim.ExpectAnim
 import com.github.florent37.expectanim.core.Expectations.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.gson.Gson
 import com.jakewharton.rxbinding2.view.RxView
-import com.tcqq.placepicker.R
-import com.tcqq.placepicker.enums.DebounceTime
-import com.tcqq.placepicker.enums.MapDimension
-import com.tcqq.placepicker.items.NearbyPlacesHeaderItem
-import com.tcqq.placepicker.items.NearbyPlacesItem
-import com.tcqq.placepicker.utils.*
-import com.tcqq.placepicker.viewmodel.PlacePickerViewModel
 import com.trello.rxlifecycle2.android.ActivityEvent
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager
@@ -218,7 +218,7 @@ class PlacePickerActivity : BaseActivity(),
             val model = ViewModelProviders.of(this).get(PlacePickerViewModel::class.java)
             if (RomUtils.isMiuiRom) {
                 val fullScreen = Settings.Global.getInt(contentResolver, "force_fsg_nav_bar", 0) != 0
-                Timber.d("Full screen: $fullScreen")
+                Timber.d("MI > Full screen: $fullScreen")
                 fullScreenForXiaoMi = fullScreen
                 model.peekHeight.value = fullScreen.let {
                     if (it) {
@@ -228,7 +228,23 @@ class PlacePickerActivity : BaseActivity(),
                     }
                 }
             } else {
-                model.peekHeight.value = AutoUtils.getDisplayHeightValue(464)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    val decorView = window.decorView
+                    decorView.post {
+                        val displayCutout = decorView.rootWindowInsets.displayCutout
+                        val rect = displayCutout?.boundingRects
+                        if (rect?.isEmpty() != false) {
+                            Timber.d("Android P > Not cutout")
+                            model.peekHeight.value = AutoUtils.getDisplayHeightValue(464)
+                        } else {
+                            Timber.d("Android P > Has cutout")
+                            model.peekHeight.value = AutoUtils.getDisplayHeightValue(464) + BarUtils.getNavBarHeight()
+                        }
+                    }
+                } else {
+                    Timber.d("Not cutout")
+                    model.peekHeight.value = AutoUtils.getDisplayHeightValue(464)
+                }
             }
 
             model.peekHeight.observe(this, androidx.lifecycle.Observer<Int> {
