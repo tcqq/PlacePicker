@@ -51,6 +51,9 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".activity.AutocompleteActivity"
+            android:windowSoftInputMode="stateVisible" />
         <activity android:name=".activity.PlacePickerActivity" />
     </application>
 

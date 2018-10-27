@@ -12,14 +12,14 @@ import eu.davidea.viewholders.FlexibleViewHolder
 
 /**
  * @author Alan Dreamer
- * @since 2018/09/22 Created
+ * @since 2018/10/23 Created
  */
-data class NearbyPlacesItem(val id: String,
-                            val placeName: String,
-                            val placeAddress: String) : AbstractFlexibleItem<NearbyPlacesItem.ViewHolder>() {
+data class AutocompleteItem(val id: String,
+                                     val placeName: String,
+                                     val placeAddress: String) : AbstractFlexibleItem<AutocompleteItem.ViewHolder>() {
 
     override fun getLayoutRes(): Int {
-        return R.layout.item_nearby_places
+        return R.layout.item_autocomplete
     }
 
     override fun createViewHolder(view: View, adapter: FlexibleAdapter<IFlexible<RecyclerView.ViewHolder>>): ViewHolder {
@@ -37,7 +37,7 @@ data class NearbyPlacesItem(val id: String,
     }
 
     /**
-     * Used for nearby places.
+     * Used for autocomplete.
      */
     class ViewHolder(view: View, adapter: FlexibleAdapter<*>) : FlexibleViewHolder(view, adapter) {
         var placeName: AppCompatTextView = view.findViewById(R.id.place_name)

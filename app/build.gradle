@@ -78,4 +78,6 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.5'
     //地图比例尺 - https://github.com/pengrad/MapScaleView
     implementation 'com.github.pengrad:mapscaleview:1.4.1'
+    //Android库侦听网络连接状态和Internet连接与RxJava Observables - https://github.com/pwittchen/ReactiveNetwork#checking-internet-connectivity-once
+    implementation 'com.github.pwittchen:reactivenetwork-rx2:3.0.0'
 }

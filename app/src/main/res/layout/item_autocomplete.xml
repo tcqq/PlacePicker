@@ -2,36 +2,33 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="203px"
+    android:layout_height="72dp"
     android:background="?attr/selectableItemBackground"
     android:gravity="center_vertical"
-    android:orientation="vertical"
-    tools:ignore="PxUsage">
+    android:orientation="vertical">
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/place_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="42px"
-        android:layout_marginEnd="42px"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:ellipsize="end"
         android:lines="1"
-        android:paddingBottom="6px"
+        android:paddingBottom="2dp"
         android:textAppearance="?attr/textAppearanceBody1"
-        android:textSize="43px"
         tools:text="Items" />
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/place_address"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="42px"
-        android:layout_marginEnd="42px"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:ellipsize="end"
         android:lines="1"
         android:textAppearance="?attr/textAppearanceBody2"
         android:textColor="@color/icon_general_color"
-        android:textSize="36px"
         tools:text="Items" />
 
 </LinearLayout>

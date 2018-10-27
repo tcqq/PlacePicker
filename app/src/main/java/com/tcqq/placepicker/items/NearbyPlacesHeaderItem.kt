@@ -15,7 +15,7 @@ import eu.davidea.viewholders.FlexibleViewHolder
 
 /**
  * @author Alan Dreamer
- * @since 26/09/2018 Created
+ * @since 2018/09/26 Created
  */
 data class NearbyPlacesHeaderItem(val id: String) : AbstractFlexibleItem<NearbyPlacesHeaderItem.ViewHolder>() {
 
@@ -28,19 +28,17 @@ data class NearbyPlacesHeaderItem(val id: String) : AbstractFlexibleItem<NearbyP
         return ViewHolder(view, adapter)
     }
 
-    override fun bindViewHolder(adapter: FlexibleAdapter<IFlexible<RecyclerView.ViewHolder>>?, holder: ViewHolder?, position: Int, payloads: MutableList<Any>?) {
-        if (holder != null) {
-            val context = holder.itemView.context
-            if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-                holder.root.layoutParams.height = BarUtils.hasTransparentStatusBar().let {
-                    if (it) BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(147)
-                    else AutoUtils.getDisplayHeightValue(147)
-                }
-            } else {
-                holder.root.layoutParams.height = BarUtils.hasTransparentStatusBar().let {
-                    if (it) BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(225)
-                    else AutoUtils.getDisplayHeightValue(225)
-                }
+    override fun bindViewHolder(adapter: FlexibleAdapter<IFlexible<RecyclerView.ViewHolder>>, holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
+        val context = holder.itemView.context
+        if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            holder.root.layoutParams.height = BarUtils.hasTransparentStatusBar().let {
+                if (it) BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(147)
+                else AutoUtils.getDisplayHeightValue(147)
+            }
+        } else {
+            holder.root.layoutParams.height = BarUtils.hasTransparentStatusBar().let {
+                if (it) BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(225)
+                else AutoUtils.getDisplayHeightValue(225)
             }
         }
     }

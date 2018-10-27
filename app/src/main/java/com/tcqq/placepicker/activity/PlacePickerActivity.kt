@@ -1,5 +1,6 @@
 package com.tcqq.placepicker.activity
 
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Build
@@ -8,7 +9,6 @@ import android.provider.Settings
 import android.view.MenuItem
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.Toast
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.lifecycle.ViewModelProviders
 import com.amap.api.location.AMapLocation
@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * @author Alan Dreamer
- * @since 17/09/2018 Created
+ * @since 2018/09/17 Created
  */
 class PlacePickerActivity : BaseActivity(),
         FlexibleAdapter.OnItemClickListener,
@@ -344,6 +344,7 @@ class PlacePickerActivity : BaseActivity(),
     }
 
     override fun onItemClick(view: View?, position: Int): Boolean {
+        Timber.d("onItemClick > position: $position")
         return false
     }
 
@@ -463,6 +464,10 @@ class PlacePickerActivity : BaseActivity(),
         cameraChangeFinishPublishSubject
                 .debounce(300, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext {
+                    showProgress(true)
+                }
                 .doOnNext {
                     Timber.d("cameraChangePublishSubject#cameraChangeFinishPublishSubject")
                     queryNearbyPlaces(it.target.latitude, it.target.longitude)
@@ -483,6 +488,10 @@ class PlacePickerActivity : BaseActivity(),
                     cameraPosition != it
                 }
                 .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext {
+                    showProgress(true)
+                }
                 .doOnNext {
                     Timber.d("cameraChangePublishSubject#cameraChangeFinishFixPublishSubject > $it")
                     cameraPosition = it
@@ -517,6 +526,11 @@ class PlacePickerActivity : BaseActivity(),
                 }.isDisposed
 
         scale_view.setExpandRtlEnabled(!SystemUtils.isRtl(this))
+    }
+
+    private fun showProgress(show: Boolean) {
+        val viewHolder = recycler_view.findViewHolderForAdapterPosition(0) as NearbyPlacesHeaderItem.ViewHolder
+        viewHolder.progressbar.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     private fun initLocation() {
@@ -628,6 +642,7 @@ class PlacePickerActivity : BaseActivity(),
         geocodeSearch!!.setOnGeocodeSearchListener(object : GeocodeSearch.OnGeocodeSearchListener {
             override fun onRegeocodeSearched(result: RegeocodeResult?, resultCode: Int) {
                 Timber.v("onRegeocodeSearched")
+                showProgress(false)
                 if (resultCode == 1000) {
                     if (result != null) {
                         val poiItem = result.regeocodeAddress.pois
@@ -639,7 +654,7 @@ class PlacePickerActivity : BaseActivity(),
                         adapter!!.updateDataSet(items)
                     }
                 } else {
-                    Timber.e("Search error. Please check the error code: https://lbs.amap.com/api/android-sdk/guide/map-tools/error-code")
+                    Timber.e("Error code: $resultCode, Error info: Please check the error code: https://lbs.amap.com/api/android-sdk/guide/map-tools/error-code")
                 }
             }
 
@@ -674,7 +689,7 @@ class PlacePickerActivity : BaseActivity(),
     }
 
     private fun openAutocomplete() {
-        Toast.makeText(this, "autocomplete", Toast.LENGTH_SHORT).show()
+        startActivity(Intent(this, AutocompleteActivity::class.java))
     }
 
     /* =========

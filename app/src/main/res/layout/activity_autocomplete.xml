@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <androidx.appcompat.widget.AppCompatEditText
+                    android:id="@+id/edit_text"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:hint="@string/autocomplete_edit_text_hint"
+                    android:singleLine="true"
+                    android:textSize="18sp" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/clear_button"
+                    android:layout_width="?attr/actionBarSize"
+                    android:layout_height="?attr/actionBarSize"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:visibility="gone"
+                    app:srcCompat="@drawable/ic_clear_black_24dp"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+        </androidx.appcompat.widget.Toolbar>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- FastScroller Layout must be at the end of ViewHierarchy
+             in order to be displayed at the top of every views -->
+        <eu.davidea.fastscroller.FastScroller
+            android:id="@+id/fast_scroller"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignTop="@+id/recycler_view"
+            android:layout_alignBottom="@+id/recycler_view"
+            android:layout_alignParentEnd="true"
+            android:layout_centerHorizontal="true"
+            app:fastScrollerAutoHideDelayInMillis="1000"
+            app:fastScrollerAutoHideEnabled="true"
+            app:fastScrollerBubbleEnabled="true"
+            app:fastScrollerBubblePosition="adjacent"
+            app:fastScrollerHandleAlwaysVisible="true"
+            app:fastScrollerIgnoreTouchesOutsideHandle="false"
+            tools:visibility="visible" />
+
+    </RelativeLayout>
+
+</LinearLayout>
