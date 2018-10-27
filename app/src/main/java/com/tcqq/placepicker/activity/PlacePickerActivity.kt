@@ -35,6 +35,7 @@ import com.github.florent37.expectanim.core.Expectations.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.gson.Gson
 import com.jakewharton.rxbinding2.view.RxView
+import com.tcqq.placepicker.utils.DeviceCompass
 import com.trello.rxlifecycle2.android.ActivityEvent
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager
@@ -456,6 +457,7 @@ class PlacePickerActivity : BaseActivity(),
 
         cameraChangePublishSubject = PublishSubject.create()
         cameraChangePublishSubject
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .doOnNext {
                     Timber.d("cameraChangePublishSubject#doOnNext > $it")
                     when (mapDimension) {
@@ -466,9 +468,9 @@ class PlacePickerActivity : BaseActivity(),
                 .filter {
                     zoom != it.zoom
                 }
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .subscribe {
                     Timber.d("cameraChangePublishSubject#onNext > show scaleView")
                     zoom = it.zoom
@@ -479,18 +481,20 @@ class PlacePickerActivity : BaseActivity(),
         cameraChangeFinishPublishSubject = PublishSubject.create()
         cameraChangeFinishPublishSubject
                 .debounce(300, TimeUnit.MILLISECONDS)
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext {
                     showProgress(true)
                 }
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .doOnNext {
                     Timber.d("cameraChangePublishSubject#cameraChangeFinishPublishSubject")
                     queryNearbyPlaces(it.target.latitude, it.target.longitude)
                 }
                 .debounce(2700, TimeUnit.MILLISECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
                     Timber.d("cameraChangePublishSubject#cameraChangeFinishFixPublishSubject > hide scaleView")
                     setScaleViewVisibility(false)
@@ -500,6 +504,7 @@ class PlacePickerActivity : BaseActivity(),
         cameraChangeFinishFixPublishSubject = PublishSubject.create()
         cameraChangeFinishFixPublishSubject
                 .throttleFirst(1, TimeUnit.SECONDS)
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .filter {
                     cameraPosition != it
                 }
@@ -508,14 +513,15 @@ class PlacePickerActivity : BaseActivity(),
                 .doOnNext {
                     showProgress(true)
                 }
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .doOnNext {
                     Timber.d("cameraChangePublishSubject#cameraChangeFinishFixPublishSubject > $it")
                     cameraPosition = it
                     queryNearbyPlaces(it.target.latitude, it.target.longitude)
                 }
                 .debounce(3, TimeUnit.SECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
                     Timber.d("cameraChangePublishSubject#cameraChangeFinishFixPublishSubject > hide scaleView")
                     setScaleViewVisibility(false)
