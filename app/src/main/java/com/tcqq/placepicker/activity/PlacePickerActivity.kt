@@ -35,7 +35,6 @@ import com.github.florent37.expectanim.core.Expectations.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.gson.Gson
 import com.jakewharton.rxbinding2.view.RxView
-import com.tcqq.placepicker.utils.DeviceCompass
 import com.trello.rxlifecycle2.android.ActivityEvent
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager
@@ -61,7 +60,7 @@ class PlacePickerActivity : BaseActivity(),
         DeviceCompass.OnOrientationChangedEventListener {
 
     private var adapter: FlexibleAdapter<IFlexible<*>>? = null
-    private var items = ArrayList<IFlexible<*>>()
+    private var items: ArrayList<IFlexible<*>>? = null
 
     private var showSearchBarAnim: ExpectAnim? = null
     private var hideSearchBarAnim: ExpectAnim? = null
@@ -81,9 +80,9 @@ class PlacePickerActivity : BaseActivity(),
     private var behavior: BottomSheetBehavior<FrameLayout>? = null
     private var fullScreenForXiaoMi: Boolean = false
 
-    private lateinit var aMap: AMap
-    private lateinit var uiSettings: UiSettings
-    private lateinit var myLocationStyle: MyLocationStyle
+    private var aMap: AMap? = null
+    private var uiSettings: UiSettings? = null
+    private var myLocationStyle: MyLocationStyle? = null
     private var locationClient: AMapLocationClient? = null
     private var locationOption: AMapLocationClientOption? = null
     private var location: AMapLocation? = null
@@ -93,17 +92,17 @@ class PlacePickerActivity : BaseActivity(),
     private var geocodeSearch: GeocodeSearch? = null
 
     private var zoom = 16F
-    private lateinit var cameraChangePublishSubject: PublishSubject<CameraPosition>
-    private lateinit var cameraChangeFinishPublishSubject: PublishSubject<CameraPosition>
-    private lateinit var cameraChangeFinishFixPublishSubject: PublishSubject<CameraPosition>
+    private var cameraChangePublishSubject: PublishSubject<CameraPosition>? = null
+    private var cameraChangeFinishPublishSubject: PublishSubject<CameraPosition>? = null
+    private var cameraChangeFinishFixPublishSubject: PublishSubject<CameraPosition>? = null
     private var cameraPosition: CameraPosition? = null
 
     private var gson: Gson? = null
 
     private var deviceCompass: DeviceCompass? = null
-    private lateinit var azimuthPublishSubject: PublishSubject<Float>
+    private var azimuthPublishSubject: PublishSubject<Float>? = null
 
-    private var mapDimension: MapDimension = MapDimension.TWO_DIMENSIONAL
+    private var mapDimension: MapDimension? = MapDimension.TWO_DIMENSIONAL
 
     override fun onSaveInstanceState(outState: Bundle?) {
         super.onSaveInstanceState(outState)
@@ -166,9 +165,7 @@ class PlacePickerActivity : BaseActivity(),
             adapter!!.mItemClickListener = null
             adapter = null
         }
-        if (gson != null) {
-            gson = null
-        }
+        gson = null
         //Map
         stopLocation()
         map_view.onDestroy()
@@ -177,15 +174,23 @@ class PlacePickerActivity : BaseActivity(),
             locationClient = null
             locationOption = null
         }
-        if (geocodeSearch != null) {
-            geocodeSearch = null
+        if (items != null) {
+            items!!.clear()
+            items = null
         }
-        if (circle != null) {
-            circle = null
-        }
-        if (cameraPosition != null) {
-            cameraPosition = null
-        }
+        geocodeSearch = null
+        circle = null
+        cameraPosition = null
+        aMap = null
+        location = null
+        uiSettings = null
+        myLocationStyle = null
+        cameraChangePublishSubject = null
+        cameraChangeFinishPublishSubject = null
+        cameraChangeFinishFixPublishSubject = null
+        azimuthPublishSubject = null
+        deviceCompass = null
+        mapDimension = null
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -326,7 +331,7 @@ class PlacePickerActivity : BaseActivity(),
                         zoom = 18F
                         mapDimension = MapDimension.THREE_DIMENSIONAL
                         floating_action_button.setImageResource(R.drawable.ic_explore_black_24dp)
-                        aMap.myLocationStyle = myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_MAP_ROTATE_NO_CENTER)
+                        aMap!!.myLocationStyle = myLocationStyle!!.myLocationType(MyLocationStyle.LOCATION_TYPE_MAP_ROTATE_NO_CENTER)
                     }
                 }
                 MapDimension.THREE_DIMENSIONAL -> {
@@ -334,7 +339,7 @@ class PlacePickerActivity : BaseActivity(),
                         zoom = 16F
                         mapDimension = MapDimension.TWO_DIMENSIONAL
                         floating_action_button.setImageResource(R.drawable.ic_my_location_black_24dp)
-                        aMap.myLocationStyle = myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_SHOW)
+                        aMap!!.myLocationStyle = myLocationStyle!!.myLocationType(MyLocationStyle.LOCATION_TYPE_SHOW)
                     }
                 }
             }
@@ -383,22 +388,22 @@ class PlacePickerActivity : BaseActivity(),
     //FIXME: Using 3D maps will enter an infinite loop
     override fun onCameraChange(cameraPosition: CameraPosition) {
         Timber.v("onCameraChange > cameraPosition: $cameraPosition")
-        cameraChangePublishSubject.onNext(cameraPosition)
+        cameraChangePublishSubject!!.onNext(cameraPosition)
     }
 
     override fun onOrientationChanged(azimuth: Float, pitch: Float, roll: Float) {
-        azimuthPublishSubject.onNext(azimuth)
+        azimuthPublishSubject!!.onNext(azimuth)
     }
 
     private fun initMapView(savedInstanceState: Bundle?) {
         map_view.onCreate(savedInstanceState)
         myLocationStyle = MyLocationStyle()
         aMap = map_view.map
-        aMap.isMyLocationEnabled = false//是否可触发定位并显示定位层
-        aMap.setMapLanguage(AMap.CHINESE)
-        aMap.myLocationStyle = myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_SHOW)
-        aMap.setOnCameraChangeListener(this)
-        aMap.setAMapGestureListener(object : AMapGestureListener {
+        aMap!!.isMyLocationEnabled = false//是否可触发定位并显示定位层
+        aMap!!.setMapLanguage(AMap.CHINESE)
+        aMap!!.myLocationStyle = myLocationStyle!!.myLocationType(MyLocationStyle.LOCATION_TYPE_SHOW)
+        aMap!!.setOnCameraChangeListener(this)
+        aMap!!.setAMapGestureListener(object : AMapGestureListener {
             //单指按下
             override fun onDown(x: Float, y: Float) {
                 Timber.v("AMapGestureListener > onDown")
@@ -441,28 +446,28 @@ class PlacePickerActivity : BaseActivity(),
             }
         })
 
-        uiSettings = aMap.uiSettings
-        uiSettings.isZoomControlsEnabled = false//是否显示地图中放大缩小按钮
-        uiSettings.isMyLocationButtonEnabled = false//是否显示默认的定位按钮
-        uiSettings.isScaleControlsEnabled = true//是否显示缩放级别
-        uiSettings.isScaleControlsEnabled = false//是否可见比例尺控件
-        uiSettings.setZoomInByScreenCenter(true)
+        uiSettings = aMap!!.uiSettings
+        uiSettings!!.isZoomControlsEnabled = false//是否显示地图中放大缩小按钮
+        uiSettings!!.isMyLocationButtonEnabled = false//是否显示默认的定位按钮
+        uiSettings!!.isScaleControlsEnabled = true//是否显示缩放级别
+        uiSettings!!.isScaleControlsEnabled = false//是否可见比例尺控件
+        uiSettings!!.setZoomInByScreenCenter(true)
         if (ScreenUtils.isPortrait(this)) {
-            uiSettings.setLogoBottomMargin(AutoUtils.getDisplayHeightValue(45))
-            uiSettings.setLogoLeftMargin(AutoUtils.getDisplayHeightValue(42))
+            uiSettings!!.setLogoBottomMargin(AutoUtils.getDisplayHeightValue(45))
+            uiSettings!!.setLogoLeftMargin(AutoUtils.getDisplayHeightValue(42))
         } else {
-            uiSettings.setLogoBottomMargin(AutoUtils.getDisplayHeightValue(75))
-            uiSettings.setLogoLeftMargin(AutoUtils.getDisplayHeightValue(25))
+            uiSettings!!.setLogoBottomMargin(AutoUtils.getDisplayHeightValue(75))
+            uiSettings!!.setLogoLeftMargin(AutoUtils.getDisplayHeightValue(25))
         }
 
         cameraChangePublishSubject = PublishSubject.create()
-        cameraChangePublishSubject
+        cameraChangePublishSubject!!
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .doOnNext {
                     Timber.d("cameraChangePublishSubject#doOnNext > $it")
                     when (mapDimension) {
-                        MapDimension.TWO_DIMENSIONAL -> cameraChangeFinishPublishSubject.onNext(it)
-                        MapDimension.THREE_DIMENSIONAL -> cameraChangeFinishFixPublishSubject.onNext(it)
+                        MapDimension.TWO_DIMENSIONAL -> cameraChangeFinishPublishSubject!!.onNext(it)
+                        MapDimension.THREE_DIMENSIONAL -> cameraChangeFinishFixPublishSubject!!.onNext(it)
                     }
                 }
                 .filter {
@@ -479,7 +484,7 @@ class PlacePickerActivity : BaseActivity(),
                 }.isDisposed
 
         cameraChangeFinishPublishSubject = PublishSubject.create()
-        cameraChangeFinishPublishSubject
+        cameraChangeFinishPublishSubject!!
                 .debounce(300, TimeUnit.MILLISECONDS)
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .subscribeOn(Schedulers.io())
@@ -502,7 +507,7 @@ class PlacePickerActivity : BaseActivity(),
 
         //Fix maps switched from 2D to 3D cause problem. https://lbs.amap.com/dev/ticket/list/opened
         cameraChangeFinishFixPublishSubject = PublishSubject.create()
-        cameraChangeFinishFixPublishSubject
+        cameraChangeFinishFixPublishSubject!!
                 .throttleFirst(1, TimeUnit.SECONDS)
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .filter {
@@ -531,7 +536,7 @@ class PlacePickerActivity : BaseActivity(),
         deviceCompass!!.setOnOrientationChangedEventListener(this)
 
         azimuthPublishSubject = PublishSubject.create()
-        azimuthPublishSubject
+        azimuthPublishSubject!!
                 .filter {
                     if (markers != null) return@filter markers!!.size == 2
                     else return@filter false
@@ -595,7 +600,7 @@ class PlacePickerActivity : BaseActivity(),
 
     private fun moveMapCamera(location: AMapLocation) {
         val currentLocation = LatLng(location.latitude, location.longitude)
-        aMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoom))
+        aMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, zoom))
     }
 
     private fun resetLocationMarker(location: AMapLocation) {
@@ -604,7 +609,7 @@ class PlacePickerActivity : BaseActivity(),
         if (markers == null) {
             markers = addMarker(currentLocation)
 
-            circle = aMap.addCircle(CircleOptions().center(currentLocation)
+            circle = aMap!!.addCircle(CircleOptions().center(currentLocation)
                     .fillColor(Color.argb(50, 65, 135, 245))
                     .radius(accuracy.toDouble())
                     .strokeColor(Color.argb(255, 66, 133, 244))
@@ -640,7 +645,7 @@ class PlacePickerActivity : BaseActivity(),
         val markerOptions = arrayListOf<MarkerOptions>()
         markerOptions.add(blueDotMarkerOption)
         markerOptions.add(blueConeMarkerOption)
-        return aMap.addMarkers(markerOptions, false)
+        return aMap!!.addMarkers(markerOptions, false)
     }
 
     private fun getDefaultOption(): AMapLocationClientOption {
@@ -660,6 +665,7 @@ class PlacePickerActivity : BaseActivity(),
     }
 
     private fun initGeocodeSearch() {
+        items = arrayListOf()
         geocodeSearch = GeocodeSearch(this)
         geocodeSearch!!.setOnGeocodeSearchListener(object : GeocodeSearch.OnGeocodeSearchListener {
             override fun onRegeocodeSearched(result: RegeocodeResult?, resultCode: Int) {
@@ -669,9 +675,9 @@ class PlacePickerActivity : BaseActivity(),
                     if (result != null) {
                         val poiItem = result.regeocodeAddress.pois
                         Timber.d("onRegeocodeSearched > poiItem: $poiItem")
-                        items.clear()
+                        items!!.clear()
                         for (index in poiItem.indices) {
-                            items.add(NearbyPlacesItem(index.toString(), poiItem[index].title, poiItem[index].snippet))
+                            items!!.add(NearbyPlacesItem(index.toString(), poiItem[index].title, poiItem[index].snippet))
                         }
                         adapter!!.updateDataSet(items)
                     }

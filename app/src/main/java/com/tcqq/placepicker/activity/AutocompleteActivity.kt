@@ -38,8 +38,8 @@ class AutocompleteActivity : BaseActivity(),
 
     private var poiSearch: PoiSearch? = null
     private var adapter: FlexibleAdapter<IFlexible<*>>? = null
-    private var items = ArrayList<IFlexible<*>>()
-    private val progressItem = ProgressItem()
+    private var items: ArrayList<IFlexible<*>>? = null
+    private var progressItem: ProgressItem? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,18 +51,22 @@ class AutocompleteActivity : BaseActivity(),
 
     override fun onDestroy() {
         super.onDestroy()
-        if (poiSearch != null) {
-            poiSearch = null
+        poiSearch = null
+        if (items != null) {
+            items!!.clear()
+            items = null
         }
         if (adapter != null) {
             adapter!!.mItemClickListener = null
+            adapter!!.setEndlessScrollListener(null, progressItem!!)
             adapter = null
         }
+        progressItem = null
     }
 
     override fun onItemClick(view: View?, position: Int): Boolean {
         Timber.d("onItemClick > position: $position")
-        if (progressItem.status == ProgressItem.StatusEnum.ON_ERROR) {
+        if (progressItem!!.status == ProgressItem.StatusEnum.ON_ERROR) {
             val itemCount = adapter!!.getItemCountOfTypes(R.layout.item_autocomplete)
             if (itemCount == position) {
                 Timber.d("onItemClick#Retry > currentPage: ${adapter!!.endlessCurrentPage + 1}")
@@ -110,10 +114,13 @@ class AutocompleteActivity : BaseActivity(),
         recycler_view.adapter = adapter
         recycler_view.setHasFixedSize(true)
 
+        items = arrayListOf()
+        progressItem = ProgressItem()
+
         // Add FastScroll to the RecyclerView, after the Adapter has been attached the RecyclerView!!!
         adapter!!.fastScroller = fast_scroller
         adapter!!
-                .setEndlessScrollListener(this, progressItem)
+                .setEndlessScrollListener(this, progressItem!!)
                 .endlessPageSize = 10//Endless is automatically disabled if newItems < 10
     }
 
@@ -137,9 +144,9 @@ class AutocompleteActivity : BaseActivity(),
                 .subscribe {
                     val poiItem = it.pois
                     Timber.d("poiItem: $poiItem")
-                    items.clear()
+                    items!!.clear()
                     for (index in poiItem.indices) {
-                        items.add(AutocompleteItem(index.toString(), poiItem[index].title, poiItem[index].snippet))
+                        items!!.add(AutocompleteItem(index.toString(), poiItem[index].title, poiItem[index].snippet))
                     }
                     adapter!!.updateDataSet(items)
 
@@ -168,7 +175,7 @@ class AutocompleteActivity : BaseActivity(),
                     .compose(bindUntilEvent(ActivityEvent.DESTROY))
                     .subscribe(Consumer {
                         if (it) {
-                            progressItem.status = ProgressItem.StatusEnum.MORE_TO_LOAD
+                            progressItem!!.status = ProgressItem.StatusEnum.MORE_TO_LOAD
 
                             /*
                              * 第一个参数keyWord表示搜索字符串，
@@ -190,20 +197,20 @@ class AutocompleteActivity : BaseActivity(),
                                         observableEmitter.onNext(poiResult)
                                     } else {
                                         Timber.e("Location error. Please check the error code: https://lbs.amap.com/api/android-sdk/guide/map-tools/error-code")
-                                        progressItem.status = ProgressItem.StatusEnum.ON_ERROR
+                                        progressItem!!.status = ProgressItem.StatusEnum.ON_ERROR
                                         adapter!!.onLoadMoreComplete(null)
                                         adapter!!.setEndlessProgressItem(progressItem)
-                                        adapter!!.addScrollableFooter(progressItem)
+                                        adapter!!.addScrollableFooter(progressItem!!)
                                     }
                                 }
                             })
                             poiSearch!!.searchPOIAsyn()
                         } else {
                             Timber.d("No network")
-                            progressItem.status = ProgressItem.StatusEnum.ON_ERROR
+                            progressItem!!.status = ProgressItem.StatusEnum.ON_ERROR
                             adapter!!.onLoadMoreComplete(null)
                             adapter!!.setEndlessProgressItem(progressItem)
-                            adapter!!.addScrollableFooter(progressItem)
+                            adapter!!.addScrollableFooter(progressItem!!)
                         }
                     }).isDisposed
         })
