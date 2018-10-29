@@ -60,7 +60,7 @@ class PlacePickerActivity : BaseActivity(),
         DeviceCompass.OnOrientationChangedEventListener {
 
     private var adapter: FlexibleAdapter<IFlexible<*>>? = null
-    private var items: ArrayList<IFlexible<*>>? = null
+    private var items: ArrayList<IFlexible<*>>? = arrayListOf()
 
     private var showSearchBarAnim: ExpectAnim? = null
     private var hideSearchBarAnim: ExpectAnim? = null
@@ -102,7 +102,7 @@ class PlacePickerActivity : BaseActivity(),
     private var deviceCompass: DeviceCompass? = null
     private var azimuthPublishSubject: PublishSubject<Float>? = null
 
-    private var mapDimension: MapDimension? = MapDimension.TWO_DIMENSIONAL
+    private var mapDimension: MapDimension = MapDimension.TWO_DIMENSIONAL
 
     override fun onSaveInstanceState(outState: Bundle?) {
         super.onSaveInstanceState(outState)
@@ -190,7 +190,6 @@ class PlacePickerActivity : BaseActivity(),
         cameraChangeFinishFixPublishSubject = null
         azimuthPublishSubject = null
         deviceCompass = null
-        mapDimension = null
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -665,7 +664,6 @@ class PlacePickerActivity : BaseActivity(),
     }
 
     private fun initGeocodeSearch() {
-        items = arrayListOf()
         geocodeSearch = GeocodeSearch(this)
         geocodeSearch!!.setOnGeocodeSearchListener(object : GeocodeSearch.OnGeocodeSearchListener {
             override fun onRegeocodeSearched(result: RegeocodeResult?, resultCode: Int) {
