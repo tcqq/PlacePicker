@@ -2,24 +2,23 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="8dp">
+    android:layout_height="56dp">
 
     <ProgressBar
-        android:id="@+id/progress_bar"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:id="@+id/load_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="center" />
 
     <androidx.appcompat.widget.AppCompatTextView
-        android:id="@+id/progress_message"
+        android:id="@+id/error_message_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:textColor="@color/icon_general_color"
         android:textAppearance="?attr/textAppearanceBody1"
+        android:textColor="@color/icon_general_color"
         android:visibility="gone"
-        tools:text="没有更多"
+        tools:text="加载失败，点击重试"
         tools:visibility="visible" />
 
 </FrameLayout>

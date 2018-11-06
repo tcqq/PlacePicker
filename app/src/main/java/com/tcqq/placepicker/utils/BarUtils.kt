@@ -1,6 +1,7 @@
 package com.tcqq.placepicker.utils
 
 import android.app.Activity
+import android.content.Context
 import android.content.res.Resources
 import android.graphics.Color
 import android.os.Build
@@ -9,7 +10,7 @@ import android.view.WindowManager
 
 /**
  * @author Alan Dreamer
- * @since 02/06/2018 Created
+ * @since 2018/06/02 Created
  */
 object BarUtils {
 
@@ -40,12 +41,19 @@ object BarUtils {
     /**
      * Return the status bar's height.
      */
-    fun getStatusBarHeight(): Int {
-        val resources = Resources.getSystem()
-        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
-        return resources.getDimensionPixelSize(resourceId)
+    fun getStatusBarHeight(context: Context): Int {
+        try {
+            var result = 0
+            val resourceId = context.resources.getIdentifier("status_bar_height", "dimen", "android")
+            if (resourceId > 0) {
+                result = context.resources.getDimensionPixelSize(resourceId)
+            }
+            return result
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return 0
     }
-
     /**
      * Whether to support transparent status bar.
      */

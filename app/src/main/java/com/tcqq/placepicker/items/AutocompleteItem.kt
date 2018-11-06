@@ -4,7 +4,6 @@ import android.view.View
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.recyclerview.widget.RecyclerView
 import com.tcqq.placepicker.R
-import com.tcqq.placepicker.utils.AutoUtils
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.items.AbstractFlexibleItem
 import eu.davidea.flexibleadapter.items.IFlexible
@@ -15,15 +14,14 @@ import eu.davidea.viewholders.FlexibleViewHolder
  * @since 2018/10/23 Created
  */
 data class AutocompleteItem(val id: String,
-                                     val placeName: String,
-                                     val placeAddress: String) : AbstractFlexibleItem<AutocompleteItem.ViewHolder>() {
+                            val placeName: String,
+                            val placeAddress: String) : AbstractFlexibleItem<AutocompleteItem.ViewHolder>() {
 
     override fun getLayoutRes(): Int {
         return R.layout.item_autocomplete
     }
 
     override fun createViewHolder(view: View, adapter: FlexibleAdapter<IFlexible<RecyclerView.ViewHolder>>): ViewHolder {
-        AutoUtils.auto(view)
         return ViewHolder(view, adapter)
     }
 

@@ -32,12 +32,12 @@ data class NearbyPlacesHeaderItem(val id: String) : AbstractFlexibleItem<NearbyP
         val context = holder.itemView.context
         if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
             holder.root.layoutParams.height = BarUtils.hasTransparentStatusBar().let {
-                if (it) BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(147)
+                if (it) BarUtils.getStatusBarHeight(context) + AutoUtils.getDisplayHeightValue(147)
                 else AutoUtils.getDisplayHeightValue(147)
             }
         } else {
             holder.root.layoutParams.height = BarUtils.hasTransparentStatusBar().let {
-                if (it) BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(225)
+                if (it) BarUtils.getStatusBarHeight(context) + AutoUtils.getDisplayHeightValue(225)
                 else AutoUtils.getDisplayHeightValue(225)
             }
         }

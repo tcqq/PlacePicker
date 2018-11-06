@@ -27,24 +27,30 @@ data class ProgressItem(var status: StatusEnum = StatusEnum.MORE_TO_LOAD) : Abst
     override fun bindViewHolder(adapter: FlexibleAdapter<IFlexible<RecyclerView.ViewHolder>>, holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
         when (status) {
             StatusEnum.MORE_TO_LOAD -> {
-                holder.progressBar.visibility = View.VISIBLE
-                holder.progressMessage.visibility = View.GONE
+                holder.loadProgress.visibility = View.VISIBLE
+                holder.errorMessageText.visibility = View.GONE
             }
             StatusEnum.ON_ERROR -> {
-                holder.progressMessage.text = "加载失败，点击重试"
-                holder.progressBar.visibility = View.GONE
-                holder.progressMessage.visibility = View.VISIBLE
+                holder.errorMessageText.text = "加载失败，点击重试"
+                holder.loadProgress.visibility = View.GONE
+                holder.errorMessageText.visibility = View.VISIBLE
+            }
+            StatusEnum.NETWORK_UNAVAILABLE -> {
+                holder.errorMessageText.text = "请检查您的网络连接"
+                holder.loadProgress.visibility = View.GONE
+                holder.errorMessageText.visibility = View.VISIBLE
             }
         }
     }
 
     class ViewHolder(view: View, adapter: FlexibleAdapter<*>) : FlexibleViewHolder(view, adapter) {
-        var progressBar: ProgressBar = view.findViewById(R.id.progress_bar)
-        var progressMessage: AppCompatTextView = view.findViewById(R.id.progress_message)
+        var loadProgress: ProgressBar = view.findViewById(R.id.load_progress)
+        var errorMessageText: AppCompatTextView = view.findViewById(R.id.error_message_text)
     }
 
     enum class StatusEnum {
         MORE_TO_LOAD,
-        ON_ERROR
+        ON_ERROR,
+        NETWORK_UNAVAILABLE
     }
 }

@@ -16,7 +16,7 @@ import androidx.lifecycle.ViewModelProviders
 import com.tcqq.placepicker.R
 import com.tcqq.placepicker.utils.MenuColorize
 import com.tcqq.placepicker.viewmodel.FrameViewModel
-import com.trello.rxlifecycle2.components.support.RxAppCompatActivity
+import com.trello.rxlifecycle3.components.support.RxAppCompatActivity
 
 
 /**

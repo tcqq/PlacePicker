@@ -35,7 +35,7 @@ import com.github.florent37.expectanim.core.Expectations.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.gson.Gson
 import com.jakewharton.rxbinding2.view.RxView
-import com.trello.rxlifecycle2.android.ActivityEvent
+import com.trello.rxlifecycle3.android.ActivityEvent
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager
 import eu.davidea.flexibleadapter.items.IFlexible
@@ -260,7 +260,7 @@ class PlacePickerActivity : BaseActivity(),
                 val lp = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
                         AutoUtils.getDisplayHeightValue(157))
                 lp.setMargins(AutoUtils.getDisplayWidthValue(14),
-                        BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(12),
+                        BarUtils.getStatusBarHeight(this) + AutoUtils.getDisplayHeightValue(12),
                         AutoUtils.getDisplayWidthValue(14),
                         0)
                 search_bar!!.layoutParams = lp
@@ -312,7 +312,7 @@ class PlacePickerActivity : BaseActivity(),
                 }.isDisposed
 
         if (BarUtils.hasTransparentStatusBar()) {
-            status_bar.layoutParams.height = BarUtils.getStatusBarHeight()
+            status_bar.layoutParams.height = BarUtils.getStatusBarHeight(this)
         }
 
         val appBarLayoutLayoutParams = CoordinatorLayout.LayoutParams(CoordinatorLayout.LayoutParams.MATCH_PARENT,
@@ -928,7 +928,7 @@ class PlacePickerActivity : BaseActivity(),
                 .toBe(
                         topOfParent().withMarginDp(ConvertUtils.px2dp(
                                 this@PlacePickerActivity,
-                                (BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(12)).toFloat()).toFloat()),
+                                (BarUtils.getStatusBarHeight(this) + AutoUtils.getDisplayHeightValue(12)).toFloat()).toFloat()),
                         visible()
                 )
                 .toAnimation()
@@ -948,7 +948,7 @@ class PlacePickerActivity : BaseActivity(),
                 .toBe(
                         topOfParent().withMarginDp(ConvertUtils.px2dp(
                                 this@PlacePickerActivity,
-                                -(BarUtils.getStatusBarHeight() + AutoUtils.getDisplayHeightValue(12 + 157)).toFloat()).toFloat()),
+                                -(BarUtils.getStatusBarHeight(this) + AutoUtils.getDisplayHeightValue(12 + 157)).toFloat()).toFloat()),
                         invisible()
                 )
                 .toAnimation()

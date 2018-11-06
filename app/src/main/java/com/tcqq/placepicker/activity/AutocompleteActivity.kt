@@ -14,7 +14,7 @@ import com.tcqq.placepicker.R
 import com.tcqq.placepicker.enums.DebounceTime
 import com.tcqq.placepicker.items.AutocompleteItem
 import com.tcqq.placepicker.items.ProgressItem
-import com.trello.rxlifecycle2.android.ActivityEvent
+import com.trello.rxlifecycle3.android.ActivityEvent
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager
 import eu.davidea.flexibleadapter.items.IFlexible
@@ -66,7 +66,7 @@ class AutocompleteActivity : BaseActivity(),
 
     override fun onItemClick(view: View?, position: Int): Boolean {
         Timber.d("onItemClick > position: $position")
-        if (progressItem!!.status == ProgressItem.StatusEnum.ON_ERROR) {
+        if (progressItem!!.status != ProgressItem.StatusEnum.MORE_TO_LOAD) {
             val itemCount = adapter!!.getItemCountOfTypes(R.layout.item_autocomplete)
             if (itemCount == position) {
                 Timber.d("onItemClick#Retry > currentPage: ${adapter!!.endlessCurrentPage + 1}")
@@ -206,8 +206,8 @@ class AutocompleteActivity : BaseActivity(),
                             })
                             poiSearch!!.searchPOIAsyn()
                         } else {
-                            Timber.d("No network")
-                            progressItem!!.status = ProgressItem.StatusEnum.ON_ERROR
+                            Timber.d("Network Unavailable")
+                            progressItem!!.status = ProgressItem.StatusEnum.NETWORK_UNAVAILABLE
                             adapter!!.onLoadMoreComplete(null)
                             adapter!!.setEndlessProgressItem(progressItem)
                             adapter!!.addScrollableFooter(progressItem!!)
