@@ -62,15 +62,12 @@
             android:id="@+id/fast_scroller"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_alignTop="@+id/recycler_view"
-            android:layout_alignBottom="@+id/recycler_view"
             android:layout_alignParentEnd="true"
-            android:layout_centerHorizontal="true"
             app:fastScrollerAutoHideDelayInMillis="1000"
             app:fastScrollerAutoHideEnabled="true"
             app:fastScrollerBubbleEnabled="true"
             app:fastScrollerBubblePosition="adjacent"
-            app:fastScrollerHandleAlwaysVisible="true"
+            app:fastScrollerHandleAlwaysVisible="false"
             app:fastScrollerIgnoreTouchesOutsideHandle="false"
             tools:visibility="visible" />
 

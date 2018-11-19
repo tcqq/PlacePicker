@@ -6,27 +6,25 @@ import android.view.View
 import com.amap.api.services.core.PoiItem
 import com.amap.api.services.poisearch.PoiResult
 import com.amap.api.services.poisearch.PoiSearch
-import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork
-import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.InternetObservingSettings
-import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.strategy.SocketInternetObservingStrategy
 import com.jakewharton.rxbinding2.widget.RxTextView
 import com.tcqq.placepicker.R
+import com.tcqq.placepicker.adapter.items.ProgressItem
 import com.tcqq.placepicker.enums.DebounceTime
 import com.tcqq.placepicker.items.AutocompleteItem
-import com.tcqq.placepicker.items.ProgressItem
+import com.tcqq.placepicker.model.PoiItemModel
 import com.trello.rxlifecycle3.android.ActivityEvent
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager
 import eu.davidea.flexibleadapter.items.IFlexible
 import io.reactivex.Observable
 import io.reactivex.ObservableOnSubscribe
+import io.reactivex.Observer
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.functions.Consumer
+import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_autocomplete.*
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
-
 
 /**
  * @author Alan Dreamer
@@ -36,92 +34,131 @@ class AutocompleteActivity : BaseActivity(),
         FlexibleAdapter.EndlessScrollListener,
         FlexibleAdapter.OnItemClickListener {
 
-    private var poiSearch: PoiSearch? = null
-    private var adapter: FlexibleAdapter<IFlexible<*>>? = null
-    private var items: ArrayList<IFlexible<*>>? = null
-    private var progressItem: ProgressItem? = null
+    private lateinit var poiSearch: PoiSearch
+    private lateinit var adapter: FlexibleAdapter<IFlexible<*>>
+    private var items: ArrayList<IFlexible<*>> = arrayListOf()
+    private var poiItem = arrayListOf<PoiItemModel>()
+    private val progressItem by lazy {
+        ProgressItem()
+    }
+    private var pageNumber = 1
+    private var keyWords = ""
+
+    companion object {
+        private const val STATE_PAGE_NUMBER = "page_number"
+        private const val STATE_KEY_WORDS = "key_words"
+        private const val STATE_POI_ITEM = "poi_item"
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?) {
+        outState?.run {
+            putInt(STATE_PAGE_NUMBER, pageNumber)
+            putString(STATE_KEY_WORDS, keyWords)
+            putParcelableArrayList(STATE_POI_ITEM, poiItem)
+//            adapter.onSaveInstanceState(this)
+        }
+        super.onSaveInstanceState(outState)
+    }
+
+/*    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
+        super.onRestoreInstanceState(savedInstanceState)
+        savedInstanceState?.run {
+            adapter.onRestoreInstanceState(savedInstanceState)
+        }
+    }*/
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState != null) {
+            with(savedInstanceState) {
+                pageNumber = getInt(STATE_PAGE_NUMBER)
+                keyWords = getString(STATE_KEY_WORDS) ?: ""
+                poiItem = getParcelableArrayList<PoiItemModel>(STATE_POI_ITEM)!!
+            }
+        }
         setContentView(R.layout.activity_autocomplete)
         setActionBar(toolbar)
         initRecyclerView()
         initSearchView()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        poiSearch = null
-        if (items != null) {
-            items!!.clear()
-            items = null
-        }
-        if (adapter != null) {
-            adapter!!.mItemClickListener = null
-            adapter!!.setEndlessScrollListener(null, progressItem!!)
-            adapter = null
-        }
-        progressItem = null
-    }
-
-    override fun onItemClick(view: View?, position: Int): Boolean {
-        Timber.d("onItemClick > position: $position")
-        if (progressItem!!.status != ProgressItem.StatusEnum.MORE_TO_LOAD) {
-            val itemCount = adapter!!.getItemCountOfTypes(R.layout.item_autocomplete)
-            if (itemCount == position) {
-                Timber.d("onItemClick#Retry > currentPage: ${adapter!!.endlessCurrentPage + 1}")
-                loadMore(adapter!!.endlessCurrentPage)
-            }
-        }
-        return false
-    }
-
-    override fun noMoreLoad(newItemsSize: Int) {
-        Timber.d("noMoreLoad > newItemsSize: $newItemsSize")
-    }
-
-    override fun onLoadMore(lastPosition: Int, currentPage: Int) {
-        Timber.d("onLoadMore > lastPosition: $lastPosition - currentPage: ${currentPage + 1}")
-        loadMore(currentPage)
-    }
-
     private fun loadMore(currentPage: Int) {
         Observable
-                .just(currentPage + 1)
+                .just(currentPage)
                 .switchMap {
                     getSearchObservable(edit_text.text.toString(), it)
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
-                .subscribe {
-                    val poiItem = it.pois
-                    Timber.d("onLoadMore > poiItem: $poiItem")
+                .subscribe(object : Observer<PoiResult?> {
+                    override fun onComplete() {
+                    }
 
-                    val newItems = arrayListOf<IFlexible<*>>()
-                    if (poiItem.isNotEmpty()) {
-                        val itemCount = adapter!!.getItemCountOfTypes(R.layout.item_autocomplete)
-                        for (index in poiItem.indices) {
-                            newItems.add(AutocompleteItem((itemCount + index).toString(), poiItem[index].title, poiItem[index].snippet))
+                    override fun onSubscribe(d: Disposable) {
+                    }
+
+                    override fun onNext(result: PoiResult) {
+                        result.pois.also {
+                            Timber.d("poiItemSize:${it.size} poiItem: $it")
+                            val newItem = arrayListOf<IFlexible<*>>()
+                            if (it.isNotEmpty()) {
+                                val itemCount = adapter.getItemCountOfTypes(R.layout.item_autocomplete)
+                                for (index in it.indices) {
+                                    poiItem.add(PoiItemModel(it[index]))
+                                    newItem.add(AutocompleteItem((itemCount + index).toString(), it[index].title, it[index].snippet))
+                                }
+                            }
+                            adapter.apply {
+                                onLoadMoreComplete(newItem)
+                                if (newItem.size < 10) {
+                                    setEndlessProgressItem(null)
+                                }
+                            }
                         }
                     }
-                    adapter!!.onLoadMoreComplete(newItems)
-                }.isDisposed
+
+                    override fun onError(e: Throwable) {
+                        Timber.e(e.localizedMessage)
+                        --pageNumber
+                        progressItem.status = ProgressItem.StatusEnum.ON_ERROR
+                        adapter.apply {
+                            setEndlessProgressItem(null)
+                            addScrollableFooter(progressItem)
+                        }
+                    }
+                })
     }
 
     private fun initRecyclerView() {
-        adapter = FlexibleAdapter(null, this, true)
+        adapter = FlexibleAdapter(
+                with(poiItem) {
+                    if (isNotEmpty()) {
+                        Timber.d("Restore item, poiItem: $poiItem")
+                        for (index in poiItem.indices) {
+                            with(poiItem[index].poiItem) {
+                                items.add(AutocompleteItem(index.toString(), title, snippet))
+                            }
+                        }
+                        items
+                    } else {
+                        Timber.d("Init items: null")
+                        null
+                    }
+                },
+                this,
+                true)
+        adapter.setAutoScrollOnExpand(true)
+                //.setAnimateToLimit(Integer.MAX_VALUE) //Use the default value
+                .setNotifyMoveOfFilteredItems(true) //When true, filtering on big list is very slow, not in this case!
+                .setNotifyChangeOfUnfilteredItems(true) //true by default
+                .setAnimationOnReverseScrolling(true)
         recycler_view.layoutManager = SmoothScrollLinearLayoutManager(this)
         recycler_view.adapter = adapter
         recycler_view.setHasFixedSize(true)
-
-        items = arrayListOf()
-        progressItem = ProgressItem()
-
-        // Add FastScroll to the RecyclerView, after the Adapter has been attached the RecyclerView!!!
-        adapter!!.fastScroller = fast_scroller
-        adapter!!
-                .setEndlessScrollListener(this, progressItem!!)
-                .endlessPageSize = 10//Endless is automatically disabled if newItems < 10
+        adapter.apply {
+            fastScroller = fast_scroller
+            setEndlessScrollListener(this@AutocompleteActivity, progressItem)
+        }
     }
 
     private fun initSearchView() {
@@ -134,23 +171,31 @@ class AutocompleteActivity : BaseActivity(),
                 }
                 .debounce(DebounceTime.SEARCH_MILLISECONDS.time, TimeUnit.MILLISECONDS)
                 .filter {
-                    it.isNotBlank()
+                    it.isNotBlank() && keyWords != it.toString()
                 }
                 .switchMap {
+                    Timber.d("keyWords changed: $it")
+                    keyWords = it.toString()
+                    poiItem.clear()
+                    pageNumber = 1
                     getSearchObservable(it)
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
-                .subscribe {
-                    val poiItem = it.pois
-                    Timber.d("poiItem: $poiItem")
-                    items!!.clear()
-                    for (index in poiItem.indices) {
-                        items!!.add(AutocompleteItem(index.toString(), poiItem[index].title, poiItem[index].snippet))
+                .subscribe { result ->
+                    items.clear()
+                    result.pois.also {
+                        Timber.d("poiItem: $it")
+                        for (index in it.indices) {
+                            items.add(AutocompleteItem(index.toString(), it[index].title, it[index].snippet))
+                            poiItem.add(PoiItemModel(it[index]))
+                        }
+                        adapter.apply {
+                            updateDataSet(items)
+                            setEndlessProgressItem(progressItem)
+                        }
                     }
-                    adapter!!.updateDataSet(items)
 
-                    adapter!!.setEndlessProgressItem(progressItem)
                 }.isDisposed
 
         clear_button.setOnClickListener {
@@ -163,56 +208,55 @@ class AutocompleteActivity : BaseActivity(),
         clear_button.setColorFilter(Color.parseColor("#FFFFFF"))
     }
 
+    override fun onItemClick(view: View?, position: Int): Boolean {
+        Timber.d("onItemClick > position: $position")
+        if (progressItem.status == ProgressItem.StatusEnum.ON_ERROR) {
+            val itemCount = adapter.getItemCountOfTypes(R.layout.item_autocomplete)
+            if (itemCount == position) {
+                loadMore(++pageNumber)
+                Timber.d("onItemClick#Retry > pageNumber: $pageNumber")
+            }
+        }
+        return false
+    }
+
+    override fun noMoreLoad(newItemsSize: Int) {
+        Timber.d("noMoreLoad > newItemsSize: $newItemsSize")
+    }
+
+    override fun onLoadMore(lastPosition: Int, currentPage: Int) {
+        loadMore(++pageNumber)
+        Timber.d("onLoadMore > pageNumber: $pageNumber")
+    }
+
     private fun getSearchObservable(keyWord: CharSequence, pageNum: Int = 1): Observable<PoiResult> {
-        return Observable.create(ObservableOnSubscribe<PoiResult> { observableEmitter ->
-            val settings = InternetObservingSettings.builder()
-                    .host("www.baidu.com")
-                    .strategy(SocketInternetObservingStrategy())
-                    .build()
-            ReactiveNetwork
-                    .checkInternetConnectivity(settings)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .compose(bindUntilEvent(ActivityEvent.DESTROY))
-                    .subscribe(Consumer {
-                        if (it) {
-                            progressItem!!.status = ProgressItem.StatusEnum.MORE_TO_LOAD
+        return Observable.create(ObservableOnSubscribe<PoiResult> {
+            /**
+             * 第一个参数keyWord表示搜索字符串，
+             * 第二个参数表示POI搜索类型，二者选填其一，选用POI搜索类型时建议填写类型代码，码表可以参考下方（而非文字）
+             * 第三个参数cityCode表示POI搜索区域，可以是城市编码也可以是城市名称，也可以传空字符串，空字符串代表全国在全国范围内进行搜索
+             */
+            val query = PoiSearch.Query(keyWord.toString(), null)
+            query.pageSize = 10//设置每页最多返回多少条
+            query.pageNum = pageNum//设置查第一页
+            poiSearch = PoiSearch(this, query)
+            poiSearch.setOnPoiSearchListener(object : PoiSearch.OnPoiSearchListener {
+                override fun onPoiItemSearched(poiItem: PoiItem, resultCode: Int) {
+                    Timber.v("onPoiItemSearched")
+                }
 
-                            /*
-                             * 第一个参数keyWord表示搜索字符串，
-                             * 第二个参数表示POI搜索类型，二者选填其一，选用POI搜索类型时建议填写类型代码，码表可以参考下方（而非文字）
-                             * 第三个参数cityCode表示POI搜索区域，可以是城市编码也可以是城市名称，也可以传空字符串，空字符串代表全国在全国范围内进行搜索
-                             */
-                            val query = PoiSearch.Query(keyWord.toString(), null)//第一个参数表示搜索字符串，第二个参数表示poi搜索类型，第三个参数表示poi搜索区域（空字符串代表全国）
-                            query.pageSize = 10//设置每页最多返回多少条
-                            query.pageNum = pageNum//设置查第一页
-                            poiSearch = PoiSearch(this, query)
-                            poiSearch!!.setOnPoiSearchListener(object : PoiSearch.OnPoiSearchListener {
-                                override fun onPoiItemSearched(poiItem: PoiItem, resultCode: Int) {
-                                    Timber.v("onPoiItemSearched")
-                                }
-
-                                override fun onPoiSearched(poiResult: PoiResult, resultCode: Int) {
-                                    Timber.v("onPoiSearched")
-                                    if (resultCode == 1000) {
-                                        observableEmitter.onNext(poiResult)
-                                    } else {
-                                        Timber.e("Location error. Please check the error code: https://lbs.amap.com/api/android-sdk/guide/map-tools/error-code")
-                                        progressItem!!.status = ProgressItem.StatusEnum.ON_ERROR
-                                        adapter!!.onLoadMoreComplete(null)
-                                        adapter!!.setEndlessProgressItem(progressItem)
-                                        adapter!!.addScrollableFooter(progressItem!!)
-                                    }
-                                }
-                            })
-                            poiSearch!!.searchPOIAsyn()
-                        } else {
-                            Timber.d("Network Unavailable")
-                            progressItem!!.status = ProgressItem.StatusEnum.NETWORK_UNAVAILABLE
-                            adapter!!.onLoadMoreComplete(null)
-                            adapter!!.setEndlessProgressItem(progressItem)
-                            adapter!!.addScrollableFooter(progressItem!!)
-                        }
-                    }).isDisposed
+                override fun onPoiSearched(poiResult: PoiResult, resultCode: Int) {
+                    Timber.v("onPoiSearched")
+                    if (resultCode == 1000) {
+                        it.onNext(poiResult)
+                    } else {
+                        val errorMessage = "Location error. Please check the error code: https://lbs.amap.com/api/android-sdk/guide/map-tools/error-code"
+                        Timber.e(errorMessage)
+                        it.onError(Throwable(errorMessage))
+                    }
+                }
+            })
+            poiSearch.searchPOIAsyn()
         })
                 .subscribeOn(Schedulers.io())
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))

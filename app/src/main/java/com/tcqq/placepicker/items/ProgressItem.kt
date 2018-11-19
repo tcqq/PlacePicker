@@ -1,4 +1,4 @@
-package com.tcqq.placepicker.items
+package com.tcqq.placepicker.adapter.items
 
 import android.view.View
 import android.widget.ProgressBar
@@ -27,18 +27,13 @@ data class ProgressItem(var status: StatusEnum = StatusEnum.MORE_TO_LOAD) : Abst
     override fun bindViewHolder(adapter: FlexibleAdapter<IFlexible<RecyclerView.ViewHolder>>, holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
         when (status) {
             StatusEnum.MORE_TO_LOAD -> {
-                holder.loadProgress.visibility = View.VISIBLE
                 holder.errorMessageText.visibility = View.GONE
+                holder.loadProgress.visibility = View.VISIBLE
             }
             StatusEnum.ON_ERROR -> {
                 holder.errorMessageText.text = "加载失败，点击重试"
-                holder.loadProgress.visibility = View.GONE
                 holder.errorMessageText.visibility = View.VISIBLE
-            }
-            StatusEnum.NETWORK_UNAVAILABLE -> {
-                holder.errorMessageText.text = "请检查您的网络连接"
                 holder.loadProgress.visibility = View.GONE
-                holder.errorMessageText.visibility = View.VISIBLE
             }
         }
     }
@@ -51,6 +46,5 @@ data class ProgressItem(var status: StatusEnum = StatusEnum.MORE_TO_LOAD) : Abst
     enum class StatusEnum {
         MORE_TO_LOAD,
         ON_ERROR,
-        NETWORK_UNAVAILABLE
     }
 }

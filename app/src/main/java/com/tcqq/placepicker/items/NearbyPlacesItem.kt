@@ -1,4 +1,4 @@
-package com.tcqq.placepicker.items
+package com.tcqq.placepicker.adapter.items
 
 import android.view.View
 import androidx.appcompat.widget.AppCompatTextView
