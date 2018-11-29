@@ -1,12 +1,16 @@
 package com.tcqq.placepicker.activity
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.appcompat.app.AlertDialog
 import com.tcqq.placepicker.R
+import com.tcqq.placepicker.activity.PlacePickerActivity.Companion.EXTRA_SELECTED_LOCATION
+import com.tcqq.placepicker.model.SelectedLocation
 import kotlinx.android.synthetic.main.activity_main.*
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
@@ -20,6 +24,14 @@ const val REQUEST_GAODE_MAP_PERMISSION = 1
  */
 class MainActivity : BaseActivity(),
         EasyPermissions.PermissionCallbacks {
+
+    private var longitude = 0.0
+    private var latitude = 0.0
+    private var placeName: CharSequence = ""
+
+    companion object {
+        private const val REQUEST_GAODE_PLACE_PICKER = 21
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +53,8 @@ class MainActivity : BaseActivity(),
                         Manifest.permission.READ_PHONE_STATE)
         if (EasyPermissions.hasPermissions(this, *permissions)) {
             // Already have permission, do the thing
-            startActivity(Intent(this, PlacePickerActivity::class.java))
+            val intent = Intent(this, PlacePickerActivity::class.java)
+            startActivityForResult(intent, REQUEST_GAODE_PLACE_PICKER)
         } else {
             // Do not have permissions, request them now
             EasyPermissions.requestPermissions(
@@ -78,6 +91,21 @@ class MainActivity : BaseActivity(),
                     }
                     .setNegativeButton(android.R.string.cancel, null)
                     .show()
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_GAODE_PLACE_PICKER) {
+            data?.getParcelableExtra<SelectedLocation>(EXTRA_SELECTED_LOCATION)?.also {
+                Timber.d("placeName: ${it.placeName} longitude: ${it.longitude} latitude: ${it.latitude} from Gaode Map")
+                placeName = it.placeName
+                longitude = it.longitude
+                latitude = it.latitude
+                location.text = String.format(getString(R.string.location_information), placeName, longitude, latitude)
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
         }
     }
 }

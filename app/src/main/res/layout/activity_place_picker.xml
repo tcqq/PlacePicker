@@ -4,6 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/md_white_1000"
+    android:theme="@style/ThemeOverlay.MaterialComponents.Light"
     tools:ignore="PxUsage">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -27,13 +29,13 @@
                 android:layout_marginStart="14px"
                 android:layout_marginTop="12px"
                 android:layout_marginEnd="14px"
-                android:background="@color/md_white_1000"
                 app:cardCornerRadius="7px"
                 app:cardUseCompatPadding="true">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:background="@color/md_white_1000"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -42,7 +44,7 @@
                         android:layout_height="126px"
                         android:scaleType="center"
                         app:srcCompat="@drawable/ic_search_black_24dp"
-                        app:tint="@color/icon_general_color" />
+                        app:tint="@color/md_grey_600" />
 
                     <androidx.appcompat.widget.AppCompatTextView
                         android:layout_width="wrap_content"
@@ -115,7 +117,7 @@
                 android:layout_width="68px"
                 android:layout_height="68px"
                 app:srcCompat="@drawable/ic_location_on_black_24dp"
-                app:tint="@color/icon_general_color" />
+                app:tint="@color/md_grey_600" />
 
             <androidx.appcompat.widget.AppCompatTextView
                 android:layout_width="wrap_content"

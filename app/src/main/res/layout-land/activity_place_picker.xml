@@ -4,6 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/md_white_1000"
+    android:theme="@style/ThemeOverlay.MaterialComponents.Light"
     tools:ignore="PxUsage">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -53,35 +55,6 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!--            <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="bottom|end"
-                            android:layout_marginBottom="75px"
-                            android:orientation="horizontal">
-
-                            <com.github.pengrad.mapscaleview.MapScaleView
-                                android:id="@+id/scale_view"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="center_vertical"
-                                android:layout_marginEnd="25px"
-                                app:scale_expandRtl="true" />
-
-                            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                                android:id="@+id/floating_action_button"
-                                style="@style/Widget.MaterialComponents.FloatingActionButton"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginEnd="25px"
-                                app:backgroundTint="@color/md_white_1000"
-                                app:fabSize="normal"
-                                app:rippleColor="?attr/colorControlNormal"
-                                app:srcCompat="@drawable/ic_my_location_black_24dp"
-                                app:tint="#4285f4" />
-
-                        </LinearLayout>-->
-
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/selected_location_marker"
                 android:layout_width="match_parent"
@@ -97,7 +70,7 @@
             android:layout_width="match_parent"
             android:layout_height="336px"
             android:layout_marginTop="1133px"
-            android:background="#F1F1F1"
+            android:background="@color/md_white_1000"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="42px"
@@ -107,7 +80,7 @@
                 android:layout_width="112px"
                 android:layout_height="112px"
                 app:srcCompat="@drawable/ic_location_on_black_24dp"
-                app:tint="@color/icon_general_color" />
+                app:tint="@color/md_grey_600" />
 
             <androidx.appcompat.widget.AppCompatTextView
                 android:layout_width="wrap_content"
@@ -123,7 +96,7 @@
             android:id="@+id/bottom_sheet"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/md_white_1000"
+            android:background="#F1F1F1"
             app:layout_anchorGravity="bottom|center"
             app:layout_behavior="@string/bottom_sheet_behavior"
             tools:layout_height="wrap_content">

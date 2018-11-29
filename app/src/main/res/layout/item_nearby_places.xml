@@ -30,7 +30,7 @@
         android:ellipsize="end"
         android:lines="1"
         android:textAppearance="?attr/textAppearanceBody2"
-        android:textColor="@color/icon_general_color"
+        android:textColor="@color/md_grey_600"
         android:textSize="36px"
         tools:text="Items" />
 

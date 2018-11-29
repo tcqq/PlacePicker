@@ -1,6 +1,5 @@
 package com.tcqq.placepicker.items
 
-import android.content.res.Configuration
 import android.view.View
 import android.widget.ProgressBar
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -8,6 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.tcqq.placepicker.R
 import com.tcqq.placepicker.utils.AutoUtils
 import com.tcqq.placepicker.utils.BarUtils
+import com.tcqq.placepicker.utils.ConvertUtils
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.items.AbstractFlexibleItem
 import eu.davidea.flexibleadapter.items.IFlexible
@@ -30,16 +30,9 @@ data class NearbyPlacesHeaderItem(val id: String) : AbstractFlexibleItem<NearbyP
 
     override fun bindViewHolder(adapter: FlexibleAdapter<IFlexible<RecyclerView.ViewHolder>>, holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
         val context = holder.itemView.context
-        if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            holder.root.layoutParams.height = BarUtils.hasTransparentStatusBar().let {
-                if (it) BarUtils.getStatusBarHeight(context) + AutoUtils.getDisplayHeightValue(147)
-                else AutoUtils.getDisplayHeightValue(147)
-            }
-        } else {
-            holder.root.layoutParams.height = BarUtils.hasTransparentStatusBar().let {
-                if (it) BarUtils.getStatusBarHeight(context) + AutoUtils.getDisplayHeightValue(225)
-                else AutoUtils.getDisplayHeightValue(225)
-            }
+        holder.root.layoutParams.height = BarUtils.hasTransparentStatusBar().let {
+            if (it) BarUtils.getStatusBarHeight(context) + ConvertUtils.dp2px(context, 56F)
+            else ConvertUtils.dp2px(context, 56F)
         }
     }
 

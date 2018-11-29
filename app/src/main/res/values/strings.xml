@@ -9,4 +9,5 @@
     <string name="permissions_required_title">Permissions Required</string>
     <string name="permissions_required_content">This app may not work correctly without the requested permissions. Open the app settings screen to modify app permissions.</string>
     <string name="autocomplete_edit_text_hint">Enter an address or place</string>
+    <string name="location_information">placeName: %1$s\nlongitude: %2$s\nlatitude: %3$s</string>
 </resources>

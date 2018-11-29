@@ -1,8 +1,10 @@
 package com.tcqq.placepicker.activity
 
+import android.app.Activity
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -25,15 +27,15 @@ import com.amap.api.services.geocoder.RegeocodeQuery
 import com.amap.api.services.geocoder.RegeocodeResult
 import com.tcqq.placepicker.R
 import com.tcqq.placepicker.items.NearbyPlacesHeaderItem
-import com.tcqq.placepicker.adapter.items.NearbyPlacesItem
-import com.tcqq.placepicker.enums.DebounceTime
+import com.tcqq.placepicker.items.NearbyPlacesItem
 import com.tcqq.placepicker.enums.MapDimension
+import com.tcqq.placepicker.model.LimitTime
+import com.tcqq.placepicker.model.SelectedLocation
 import com.tcqq.placepicker.utils.*
 import com.tcqq.placepicker.viewmodel.PlacePickerViewModel
 import com.github.florent37.expectanim.ExpectAnim
 import com.github.florent37.expectanim.core.Expectations.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.gson.Gson
 import com.jakewharton.rxbinding2.view.RxView
 import com.trello.rxlifecycle3.android.ActivityEvent
 import eu.davidea.flexibleadapter.FlexibleAdapter
@@ -99,22 +101,46 @@ class PlacePickerActivity : BaseActivity(),
     private var mapDimension: MapDimension = MapDimension.TWO_DIMENSIONAL
     private var cameraPosition: CameraPosition? = null
 
+    private var currentPlaceName = ""
+    private var currentLatitude: Double = 0.0
+    private var currentLongitude: Double = 0.0
+
     private lateinit var cameraChangePublishSubject: PublishSubject<CameraPosition>
     private lateinit var cameraChangeFinishPublishSubject: PublishSubject<CameraPosition>
     private lateinit var cameraChangeFinishFixPublishSubject: PublishSubject<CameraPosition>
 
-    private lateinit var gson: Gson
-
     private lateinit var deviceCompass: DeviceCompass
     private lateinit var azimuthPublishSubject: PublishSubject<Float>
 
+    companion object {
+/*        private const val STATE_PLACE_NAME = "place_name"
+        private const val STATE_LATITUDE = "latitude"
+        private const val STATE_LONGITUDE = "longitude"*/
+
+        const val EXTRA_SELECTED_LOCATION = "selected_location"
+
+        private const val REQUEST_AUTOCOMPLETE = 10
+    }
+
     override fun onSaveInstanceState(outState: Bundle?) {
+/*        outState?.run {
+            putDouble(STATE_LATITUDE, latitude)
+            putDouble(STATE_LONGITUDE, longitude)
+            putString(STATE_PLACE_NAME, currentPlaceName)
+        }*/
         super.onSaveInstanceState(outState)
         map_view.onSaveInstanceState(outState)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+/*        if (savedInstanceState != null) {
+            with(savedInstanceState) {
+                latitude = getDouble(STATE_LATITUDE)
+                longitude = getDouble(STATE_LONGITUDE)
+                currentPlaceName = getString(STATE_PLACE_NAME)!!
+            }
+        }*/
         AutoUtils.setSize(this, !BarUtils.hasTransparentStatusBar(), 1080, 1920)
         setContentView(R.layout.activity_place_picker)
         BarUtils.transparentStatusBar(this)
@@ -127,6 +153,16 @@ class PlacePickerActivity : BaseActivity(),
         initGeocodeSearch()
         initLocation()
         initRecyclerView()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_AUTOCOMPLETE) {
+            data?.getParcelableExtra<SelectedLocation>(EXTRA_SELECTED_LOCATION)?.apply {
+                setSelectedLocation(placeName, latitude, longitude)
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
     }
 
     override fun onResume() {
@@ -176,7 +212,6 @@ class PlacePickerActivity : BaseActivity(),
     }
 
     private fun initView() {
-        gson = Gson()
         behavior = BottomSheetBehavior.from(bottom_sheet)
         showSearchBarAnim = ExpectAnim()
         hideSearchBarAnim = ExpectAnim()
@@ -233,7 +268,7 @@ class PlacePickerActivity : BaseActivity(),
             }
             RxView
                     .clicks(search_bar!!)
-                    .throttleFirst(DebounceTime.CLICK_SECONDS.time, TimeUnit.SECONDS)
+                    .throttleFirst(LimitTime.CLICK_THROTTLE_SECONDS, TimeUnit.SECONDS)
                     .observeOn(AndroidSchedulers.mainThread())
                     .compose(bindUntilEvent(ActivityEvent.DESTROY))
                     .subscribe {
@@ -321,6 +356,30 @@ class PlacePickerActivity : BaseActivity(),
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             floating_action_button.setColorFilter(ThemeUtils.getThemeValue(R.attr.colorSecondary, this))
         }
+
+        select_marker_location.setOnClickListener {
+            setSelectedLocation(currentPlaceName, currentLatitude, currentLongitude)
+        }
+    }
+
+    private fun setSelectedLocation(placeName: String,
+                                    latitude: Double,
+                                    longitude: Double) {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            putExtra(EXTRA_SELECTED_LOCATION, SelectedLocation(placeName, latitude, longitude))
+        }
+        setResult(RESULT_OK, intent)
+        finish()
+    }
+
+    override fun onItemClick(view: View?, position: Int): Boolean {
+        Timber.d("onItemClick > position: $position")
+        if (position != 0) {
+            adapter.getItem(position, NearbyPlacesItem::class.java)!!.apply {
+                setSelectedLocation(placeName, latitude, longitude)
+            }
+        }
+        return false
     }
 
     private fun initRecyclerView() {
@@ -329,11 +388,6 @@ class PlacePickerActivity : BaseActivity(),
         recycler_view.adapter = adapter
         recycler_view.setHasFixedSize(true)
         adapter.addScrollableHeader(NearbyPlacesHeaderItem("SHI"))
-    }
-
-    override fun onItemClick(view: View?, position: Int): Boolean {
-        Timber.d("onItemClick > position: $position")
-        return false
     }
 
     private fun getSlideOffsetObservable(slideOffset: Int): Observable<Int> {
@@ -349,6 +403,16 @@ class PlacePickerActivity : BaseActivity(),
 
     override fun onCameraChangeFinish(cameraPosition: CameraPosition) {
         Timber.d("onCameraChangeFinish > cameraPosition: $cameraPosition")
+        val location = Location("")//provider name is unnecessarily
+        cameraPosition.target.apply {
+            location.latitude = latitude
+            location.longitude = latitude
+            currentLatitude = latitude
+            currentLongitude = longitude
+        }
+        val coordinate = ConvertUtils.latLng2DMS(location)
+        Timber.d("latLng2DMS: $coordinate")
+        currentPlaceName = coordinate
     }
 
     //FIXME: Using 3D maps will enter an infinite loop
@@ -550,7 +614,7 @@ class PlacePickerActivity : BaseActivity(),
                         }
                         resetLocationMarker(it)
                     } else {
-                        Timber.e("Location error, Error code: ${it.errorCode}, Error info: ${it.errorInfo}")
+                        Timber.e("SelectedLocation error, Error code: ${it.errorCode}, Error info: ${it.errorInfo}")
                     }
                 }.isDisposed
         startLocation()
@@ -634,7 +698,6 @@ class PlacePickerActivity : BaseActivity(),
         geocodeSearch = GeocodeSearch(this)
         geocodeSearch.setOnGeocodeSearchListener(object : GeocodeSearch.OnGeocodeSearchListener {
             override fun onRegeocodeSearched(result: RegeocodeResult?, resultCode: Int) {
-                Timber.v("onRegeocodeSearched")
                 showProgress(false)
                 if (resultCode == 1000) {
                     if (result != null) {
@@ -642,7 +705,14 @@ class PlacePickerActivity : BaseActivity(),
                         Timber.d("onRegeocodeSearched > poiItem: $poiItem")
                         items.clear()
                         for (index in poiItem.indices) {
-                            items.add(NearbyPlacesItem(index.toString(), poiItem[index].title, poiItem[index].snippet))
+                            with(poiItem[index]) {
+                                items.add(NearbyPlacesItem(
+                                        index.toString(),
+                                        title,
+                                        snippet,
+                                        latLonPoint.latitude,
+                                        latLonPoint.longitude))
+                            }
                         }
                         adapter.updateDataSet(items)
                     }
@@ -682,7 +752,8 @@ class PlacePickerActivity : BaseActivity(),
     }
 
     private fun openAutocomplete() {
-        startActivity(Intent(this, AutocompleteActivity::class.java))
+        val intent = Intent(this, AutocompleteActivity::class.java)
+        startActivityForResult(intent, REQUEST_AUTOCOMPLETE)
     }
 
     /* =========

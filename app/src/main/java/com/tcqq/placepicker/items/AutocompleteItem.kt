@@ -15,7 +15,9 @@ import eu.davidea.viewholders.FlexibleViewHolder
  */
 data class AutocompleteItem(val id: String,
                             val placeName: String,
-                            val placeAddress: String) : AbstractFlexibleItem<AutocompleteItem.ViewHolder>() {
+                            val placeAddress: String,
+                            val latitude: Double,
+                            val longitude: Double) : AbstractFlexibleItem<AutocompleteItem.ViewHolder>() {
 
     override fun getLayoutRes(): Int {
         return R.layout.item_autocomplete

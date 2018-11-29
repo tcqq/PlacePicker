@@ -1,4 +1,4 @@
-package com.tcqq.placepicker.adapter.items
+package com.tcqq.placepicker.items
 
 import android.view.View
 import androidx.appcompat.widget.AppCompatTextView
@@ -16,7 +16,9 @@ import eu.davidea.viewholders.FlexibleViewHolder
  */
 data class NearbyPlacesItem(val id: String,
                             val placeName: String,
-                            val placeAddress: String) : AbstractFlexibleItem<NearbyPlacesItem.ViewHolder>() {
+                            val placeAddress: String,
+                            val latitude: Double,
+                            val longitude: Double) : AbstractFlexibleItem<NearbyPlacesItem.ViewHolder>() {
 
     override fun getLayoutRes(): Int {
         return R.layout.item_nearby_places

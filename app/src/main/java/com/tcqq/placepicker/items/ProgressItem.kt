@@ -1,4 +1,4 @@
-package com.tcqq.placepicker.adapter.items
+package com.tcqq.placepicker.items
 
 import android.view.View
 import android.widget.ProgressBar

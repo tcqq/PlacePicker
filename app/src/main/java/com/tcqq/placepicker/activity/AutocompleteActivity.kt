@@ -1,17 +1,20 @@
 package com.tcqq.placepicker.activity
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import com.amap.api.services.core.PoiItem
 import com.amap.api.services.poisearch.PoiResult
 import com.amap.api.services.poisearch.PoiSearch
+import com.tcqq.placepicker.activity.PlacePickerActivity.Companion.EXTRA_SELECTED_LOCATION
 import com.jakewharton.rxbinding2.widget.RxTextView
 import com.tcqq.placepicker.R
-import com.tcqq.placepicker.adapter.items.ProgressItem
-import com.tcqq.placepicker.enums.DebounceTime
 import com.tcqq.placepicker.items.AutocompleteItem
+import com.tcqq.placepicker.items.ProgressItem
+import com.tcqq.placepicker.model.LimitTime
 import com.tcqq.placepicker.model.PoiItemModel
+import com.tcqq.placepicker.model.SelectedLocation
 import com.trello.rxlifecycle3.android.ActivityEvent
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager
@@ -105,7 +108,14 @@ class AutocompleteActivity : BaseActivity(),
                                 val itemCount = adapter.getItemCountOfTypes(R.layout.item_autocomplete)
                                 for (index in it.indices) {
                                     poiItem.add(PoiItemModel(it[index]))
-                                    newItem.add(AutocompleteItem((itemCount + index).toString(), it[index].title, it[index].snippet))
+                                    with(it[index]) {
+                                        newItem.add(AutocompleteItem(
+                                                (itemCount + index).toString(),
+                                                title,
+                                                snippet,
+                                                latLonPoint.latitude,
+                                                latLonPoint.longitude))
+                                    }
                                 }
                             }
                             adapter.apply {
@@ -136,7 +146,12 @@ class AutocompleteActivity : BaseActivity(),
                         Timber.d("Restore item, poiItem: $poiItem")
                         for (index in poiItem.indices) {
                             with(poiItem[index].poiItem) {
-                                items.add(AutocompleteItem(index.toString(), title, snippet))
+                                items.add(AutocompleteItem(
+                                        index.toString(),
+                                        title,
+                                        snippet,
+                                        latLonPoint.latitude,
+                                        latLonPoint.longitude))
                             }
                         }
                         items
@@ -169,7 +184,7 @@ class AutocompleteActivity : BaseActivity(),
                     if (it.isEmpty()) clear_button.visibility = View.GONE
                     else clear_button.visibility = View.VISIBLE
                 }
-                .debounce(DebounceTime.SEARCH_MILLISECONDS.time, TimeUnit.MILLISECONDS)
+                .debounce(LimitTime.SEARCH_DEBOUNCE_MILLISECONDS, TimeUnit.MILLISECONDS)
                 .filter {
                     it.isNotBlank() && keyWords != it.toString()
                 }
@@ -187,7 +202,14 @@ class AutocompleteActivity : BaseActivity(),
                     result.pois.also {
                         Timber.d("poiItem: $it")
                         for (index in it.indices) {
-                            items.add(AutocompleteItem(index.toString(), it[index].title, it[index].snippet))
+                            with(it[index]) {
+                                items.add(AutocompleteItem(
+                                        index.toString(),
+                                        title,
+                                        snippet,
+                                        latLonPoint.latitude,
+                                        latLonPoint.longitude))
+                            }
                             poiItem.add(PoiItemModel(it[index]))
                         }
                         adapter.apply {
@@ -195,7 +217,6 @@ class AutocompleteActivity : BaseActivity(),
                             setEndlessProgressItem(progressItem)
                         }
                     }
-
                 }.isDisposed
 
         clear_button.setOnClickListener {
@@ -209,15 +230,28 @@ class AutocompleteActivity : BaseActivity(),
     }
 
     override fun onItemClick(view: View?, position: Int): Boolean {
-        Timber.d("onItemClick > position: $position")
-        if (progressItem.status == ProgressItem.StatusEnum.ON_ERROR) {
-            val itemCount = adapter.getItemCountOfTypes(R.layout.item_autocomplete)
-            if (itemCount == position) {
-                loadMore(++pageNumber)
-                Timber.d("onItemClick#Retry > pageNumber: $pageNumber")
+        val itemCount = adapter.getItemCountOfTypes(R.layout.item_autocomplete)
+        if (progressItem.status == ProgressItem.StatusEnum.ON_ERROR
+                && itemCount == position) {
+            loadMore(++pageNumber)
+            Timber.d("onItemClick#Retry > position: $position pageNumber: $pageNumber")
+        } else {
+            Timber.d("onItemClick > position: $position")
+            adapter.getItem(position, AutocompleteItem::class.java)!!.apply {
+                setSelectedLocation(placeName, latitude, longitude)
             }
         }
         return false
+    }
+
+    private fun setSelectedLocation(placeName: String,
+                                    latitude: Double,
+                                    longitude: Double) {
+        val intent = Intent(this, PlacePickerActivity::class.java).apply {
+            putExtra(EXTRA_SELECTED_LOCATION, SelectedLocation(placeName, latitude, longitude))
+        }
+        setResult(RESULT_OK, intent)
+        finish()
     }
 
     override fun noMoreLoad(newItemsSize: Int) {
@@ -250,7 +284,7 @@ class AutocompleteActivity : BaseActivity(),
                     if (resultCode == 1000) {
                         it.onNext(poiResult)
                     } else {
-                        val errorMessage = "Location error. Please check the error code: https://lbs.amap.com/api/android-sdk/guide/map-tools/error-code"
+                        val errorMessage = "SelectedLocation error. Please check the error code: https://lbs.amap.com/api/android-sdk/guide/map-tools/error-code"
                         Timber.e(errorMessage)
                         it.onError(Throwable(errorMessage))
                     }
