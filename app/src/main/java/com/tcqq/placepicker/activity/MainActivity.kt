@@ -1,7 +1,6 @@
 package com.tcqq.placepicker.activity
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -94,7 +93,6 @@ class MainActivity : BaseActivity(),
         }
     }
 
-    @SuppressLint("SetTextI18n")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_GAODE_PLACE_PICKER) {
             data?.getParcelableExtra<SelectedLocation>(EXTRA_SELECTED_LOCATION)?.also {
