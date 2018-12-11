@@ -752,7 +752,8 @@ class PlacePickerActivity : BaseActivity(),
     }
 
     private fun openAutocomplete() {
-        val intent = Intent(this, AutocompleteActivity::class.java)
+        val intent = Intent(this, AutocompleteActivityKt::class.java)
+//        val intent = Intent(this, AutocompleteActivity::class.java)
         startActivityForResult(intent, REQUEST_AUTOCOMPLETE)
     }
 

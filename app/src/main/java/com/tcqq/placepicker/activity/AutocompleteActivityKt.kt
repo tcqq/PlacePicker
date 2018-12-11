@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit
  * @author Alan Dreamer
  * @since 2018/09/17 Created
  */
-class AutocompleteActivity : BaseActivity(),
+class AutocompleteActivityKt : BaseActivity(),
         FlexibleAdapter.EndlessScrollListener,
         FlexibleAdapter.OnItemClickListener {
 
@@ -58,17 +58,9 @@ class AutocompleteActivity : BaseActivity(),
             putInt(STATE_PAGE_NUMBER, pageNumber)
             putString(STATE_KEY_WORDS, keyWords)
             putParcelableArrayList(STATE_POI_ITEM, poiItem)
-//            adapter.onSaveInstanceState(this)
         }
         super.onSaveInstanceState(outState)
     }
-
-/*    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
-        super.onRestoreInstanceState(savedInstanceState)
-        savedInstanceState?.run {
-            adapter.onRestoreInstanceState(savedInstanceState)
-        }
-    }*/
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,60 +75,6 @@ class AutocompleteActivity : BaseActivity(),
         setActionBar(toolbar)
         initRecyclerView()
         initSearchView()
-    }
-
-    private fun loadMore(currentPage: Int) {
-        Observable
-                .just(currentPage)
-                .switchMap {
-                    getSearchObservable(edit_text.text.toString(), it)
-                }
-                .observeOn(AndroidSchedulers.mainThread())
-                .compose(bindUntilEvent(ActivityEvent.DESTROY))
-                .subscribe(object : Observer<PoiResult?> {
-                    override fun onComplete() {
-                    }
-
-                    override fun onSubscribe(d: Disposable) {
-                    }
-
-                    override fun onNext(result: PoiResult) {
-                        result.pois.also {
-                            Timber.d("poiItemSize:${it.size} poiItem: $it")
-                            val newItem = arrayListOf<IFlexible<*>>()
-                            if (it.isNotEmpty()) {
-                                val itemCount = adapter.getItemCountOfTypes(R.layout.item_autocomplete)
-                                for (index in it.indices) {
-                                    poiItem.add(PoiItemModel(it[index]))
-                                    with(it[index]) {
-                                        newItem.add(AutocompleteItem(
-                                                (itemCount + index).toString(),
-                                                title,
-                                                snippet,
-                                                latLonPoint.latitude,
-                                                latLonPoint.longitude))
-                                    }
-                                }
-                            }
-                            adapter.apply {
-                                onLoadMoreComplete(newItem)
-                                if (newItem.size < 10) {
-                                    setEndlessProgressItem(null)
-                                }
-                            }
-                        }
-                    }
-
-                    override fun onError(e: Throwable) {
-                        Timber.e(e.localizedMessage)
-                        --pageNumber
-                        progressItem.status = ProgressItem.StatusEnum.ON_ERROR
-                        adapter.apply {
-                            setEndlessProgressItem(null)
-                            addScrollableFooter(progressItem)
-                        }
-                    }
-                })
     }
 
     private fun initRecyclerView() {
@@ -162,17 +100,12 @@ class AutocompleteActivity : BaseActivity(),
                 },
                 this,
                 true)
-        adapter.setAutoScrollOnExpand(true)
-                //.setAnimateToLimit(Integer.MAX_VALUE) //Use the default value
-                .setNotifyMoveOfFilteredItems(true) //When true, filtering on big list is very slow, not in this case!
-                .setNotifyChangeOfUnfilteredItems(true) //true by default
-                .setAnimationOnReverseScrolling(true)
         recycler_view.layoutManager = SmoothScrollLinearLayoutManager(this)
         recycler_view.adapter = adapter
         recycler_view.setHasFixedSize(true)
         adapter.apply {
             fastScroller = fast_scroller
-            setEndlessScrollListener(this@AutocompleteActivity, progressItem)
+            setEndlessScrollListener(this@AutocompleteActivityKt, progressItem)
         }
     }
 
@@ -234,10 +167,10 @@ class AutocompleteActivity : BaseActivity(),
         if (progressItem.status == ProgressItem.StatusEnum.ON_ERROR
                 && itemCount == position) {
             loadMore(++pageNumber)
-            Timber.d("onItemClick#Retry > position: $position pageNumber: $pageNumber")
+            Timber.d("onItemClick#retry#position: $position pageNumber: $pageNumber")
         } else {
-            Timber.d("onItemClick > position: $position")
-            adapter.getItem(position, AutocompleteItem::class.java)!!.apply {
+            Timber.d("onItemClick#position: $position")
+            adapter.getItem(position, AutocompleteItem::class.java)?.apply {
                 setSelectedLocation(placeName, latitude, longitude)
             }
         }
@@ -254,8 +187,62 @@ class AutocompleteActivity : BaseActivity(),
         finish()
     }
 
+    private fun loadMore(currentPage: Int) {
+        Observable
+                .just(currentPage)
+                .switchMap {
+                    getSearchObservable(edit_text.text.toString(), it)
+                }
+                .observeOn(AndroidSchedulers.mainThread())
+                .compose(bindUntilEvent(ActivityEvent.DESTROY))
+                .subscribe(object : Observer<PoiResult?> {
+                    override fun onComplete() {
+                    }
+
+                    override fun onSubscribe(d: Disposable) {
+                    }
+
+                    override fun onNext(result: PoiResult) {
+                        result.pois.also {
+                            Timber.d("poiItemSize:${it.size} poiItem: $it")
+                            val newItem = arrayListOf<IFlexible<*>>()
+                            if (it.isNotEmpty()) {
+                                val itemCount = adapter.getItemCountOfTypes(R.layout.item_autocomplete)
+                                for (index in it.indices) {
+                                    poiItem.add(PoiItemModel(it[index]))
+                                    with(it[index]) {
+                                        newItem.add(AutocompleteItem(
+                                                (itemCount + index).toString(),
+                                                title,
+                                                snippet,
+                                                latLonPoint.latitude,
+                                                latLonPoint.longitude))
+                                    }
+                                }
+                            }
+                            adapter.apply {
+                                onLoadMoreComplete(newItem)
+                                if (newItem.size < 10) {
+                                    setEndlessProgressItem(null)
+                                }
+                            }
+                        }
+                    }
+
+                    override fun onError(e: Throwable) {
+                        Timber.e(e.localizedMessage)
+                        --pageNumber
+                        progressItem.status = ProgressItem.StatusEnum.ON_ERROR
+                        adapter.apply {
+                            setEndlessProgressItem(null)
+                            addScrollableFooter(progressItem)
+                        }
+                    }
+                })
+    }
+
     override fun noMoreLoad(newItemsSize: Int) {
-        Timber.d("noMoreLoad > newItemsSize: $newItemsSize")
+        Timber.d("noMoreLoad#newItemsSize: $newItemsSize")
     }
 
     override fun onLoadMore(lastPosition: Int, currentPage: Int) {
@@ -274,6 +261,7 @@ class AutocompleteActivity : BaseActivity(),
             query.pageSize = 10//设置每页最多返回多少条
             query.pageNum = pageNum//设置查第一页
             poiSearch = PoiSearch(this, query)
+            poiSearch.searchPOIAsyn()
             poiSearch.setOnPoiSearchListener(object : PoiSearch.OnPoiSearchListener {
                 override fun onPoiItemSearched(poiItem: PoiItem, resultCode: Int) {
                     Timber.v("onPoiItemSearched")
@@ -290,7 +278,6 @@ class AutocompleteActivity : BaseActivity(),
                     }
                 }
             })
-            poiSearch.searchPOIAsyn()
         })
                 .subscribeOn(Schedulers.io())
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
