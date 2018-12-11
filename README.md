@@ -4,7 +4,7 @@
 PlacePicker
 ===========
 
-Use the high German map to get and select locations.
+Use the Gaode Map to get and select locations.
 
 Introduction
 ------------
