@@ -4,12 +4,13 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import androidx.core.view.isVisible
 import com.amap.api.services.core.PoiItem
 import com.amap.api.services.poisearch.PoiResult
 import com.amap.api.services.poisearch.PoiSearch
-import com.tcqq.placepicker.activity.PlacePickerActivity.Companion.EXTRA_SELECTED_LOCATION
-import com.jakewharton.rxbinding2.widget.RxTextView
+import com.jakewharton.rxbinding3.widget.textChanges
 import com.tcqq.placepicker.R
+import com.tcqq.placepicker.activity.PlacePickerActivity.Companion.EXTRA_SELECTED_LOCATION
 import com.tcqq.placepicker.items.AutocompleteItem
 import com.tcqq.placepicker.items.ProgressItem
 import com.tcqq.placepicker.model.LimitTime
@@ -110,12 +111,11 @@ class AutocompleteActivityKt : BaseActivity(),
     }
 
     private fun initSearchView() {
-        RxTextView
-                .textChanges(edit_text)
+        edit_text
+                .textChanges()
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext {
-                    if (it.isEmpty()) clear_button.visibility = View.GONE
-                    else clear_button.visibility = View.VISIBLE
+                    clear_button.isVisible = it.isNotBlank()
                 }
                 .debounce(LimitTime.SEARCH_DEBOUNCE_MILLISECONDS, TimeUnit.MILLISECONDS)
                 .filter {
@@ -126,37 +126,48 @@ class AutocompleteActivityKt : BaseActivity(),
                     keyWords = it.toString()
                     poiItem.clear()
                     pageNumber = 1
+                    items.clear()
                     getSearchObservable(it)
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
-                .subscribe { result ->
-                    items.clear()
-                    result.pois.also {
-                        Timber.d("poiItem: $it")
-                        for (index in it.indices) {
-                            with(it[index]) {
-                                items.add(AutocompleteItem(
-                                        index.toString(),
-                                        title,
-                                        snippet,
-                                        latLonPoint.latitude,
-                                        latLonPoint.longitude))
+                .subscribe(object : Observer<PoiResult?> {
+                    override fun onComplete() {
+                    }
+
+                    override fun onSubscribe(d: Disposable) {
+                    }
+
+                    override fun onNext(result: PoiResult) {
+                        result.pois.also {
+                            Timber.d("poiItem: $it")
+                            for (index in it.indices) {
+                                with(it[index]) {
+                                    items.add(AutocompleteItem(
+                                            index.toString(),
+                                            title,
+                                            snippet,
+                                            latLonPoint.latitude,
+                                            latLonPoint.longitude))
+                                }
+                                poiItem.add(PoiItemModel(it[index]))
                             }
-                            poiItem.add(PoiItemModel(it[index]))
-                        }
-                        adapter.apply {
-                            updateDataSet(items)
-                            setEndlessProgressItem(progressItem)
+                            adapter.apply {
+                                updateDataSet(items)
+                                setEndlessProgressItem(progressItem)
+                            }
                         }
                     }
-                }.isDisposed
+
+                    override fun onError(e: Throwable) {
+                        Timber.d(e.localizedMessage)
+                    }
+                })
 
         clear_button.setOnClickListener {
             edit_text.text?.clear()
         }
         edit_text.requestFocus()
-
         edit_text.setHintTextColor(Color.parseColor("#42FFFFFF"))
         edit_text.setTextColor(Color.parseColor("#FFFFFF"))
         clear_button.setColorFilter(Color.parseColor("#FFFFFF"))
@@ -166,6 +177,7 @@ class AutocompleteActivityKt : BaseActivity(),
         val itemCount = adapter.getItemCountOfTypes(R.layout.item_autocomplete)
         if (progressItem.status == ProgressItem.StatusEnum.ON_ERROR
                 && itemCount == position) {
+            setProgressStatus(ProgressItem.StatusEnum.MORE_TO_LOAD)
             loadMore(++pageNumber)
             Timber.d("onItemClick#retry#position: $position pageNumber: $pageNumber")
         } else {
@@ -175,6 +187,25 @@ class AutocompleteActivityKt : BaseActivity(),
             }
         }
         return false
+    }
+
+    private fun setProgressStatus(status: ProgressItem.StatusEnum) {
+        val position = adapter.getItemCountOfTypes(R.layout.item_autocomplete)
+        val viewHolder = recycler_view.findViewHolderForAdapterPosition(position) as ProgressItem.ViewHolder?
+        viewHolder?.apply {
+            progressItem.status = status
+            when (status) {
+                ProgressItem.StatusEnum.MORE_TO_LOAD -> {
+                    errorMessageText.visibility = View.GONE
+                    loadProgress.visibility = View.VISIBLE
+                }
+                ProgressItem.StatusEnum.ON_ERROR -> {
+                    errorMessageText.text = "加载失败，点击重试"
+                    errorMessageText.visibility = View.VISIBLE
+                    loadProgress.visibility = View.GONE
+                }
+            }
+        }
     }
 
     private fun setSelectedLocation(placeName: String,
@@ -197,9 +228,11 @@ class AutocompleteActivityKt : BaseActivity(),
                 .compose(bindUntilEvent(ActivityEvent.DESTROY))
                 .subscribe(object : Observer<PoiResult?> {
                     override fun onComplete() {
+
                     }
 
                     override fun onSubscribe(d: Disposable) {
+
                     }
 
                     override fun onNext(result: PoiResult) {
@@ -232,11 +265,7 @@ class AutocompleteActivityKt : BaseActivity(),
                     override fun onError(e: Throwable) {
                         Timber.e(e.localizedMessage)
                         --pageNumber
-                        progressItem.status = ProgressItem.StatusEnum.ON_ERROR
-                        adapter.apply {
-                            setEndlessProgressItem(null)
-                            addScrollableFooter(progressItem)
-                        }
+                        setProgressStatus(ProgressItem.StatusEnum.ON_ERROR)
                     }
                 })
     }
@@ -252,7 +281,7 @@ class AutocompleteActivityKt : BaseActivity(),
 
     private fun getSearchObservable(keyWord: CharSequence, pageNum: Int = 1): Observable<PoiResult> {
         return Observable.create(ObservableOnSubscribe<PoiResult> {
-            /**
+            /*
              * 第一个参数keyWord表示搜索字符串，
              * 第二个参数表示POI搜索类型，二者选填其一，选用POI搜索类型时建议填写类型代码，码表可以参考下方（而非文字）
              * 第三个参数cityCode表示POI搜索区域，可以是城市编码也可以是城市名称，也可以传空字符串，空字符串代表全国在全国范围内进行搜索
@@ -263,14 +292,16 @@ class AutocompleteActivityKt : BaseActivity(),
             poiSearch = PoiSearch(this, query)
             poiSearch.searchPOIAsyn()
             poiSearch.setOnPoiSearchListener(object : PoiSearch.OnPoiSearchListener {
-                override fun onPoiItemSearched(poiItem: PoiItem, resultCode: Int) {
-                    Timber.v("onPoiItemSearched")
+                override fun onPoiItemSearched(poiItem: PoiItem?, resultCode: Int) {
+                    Timber.v("onPoiItemSearched resultCode: $resultCode")
                 }
 
-                override fun onPoiSearched(poiResult: PoiResult, resultCode: Int) {
-                    Timber.v("onPoiSearched")
+                override fun onPoiSearched(poiResult: PoiResult?, resultCode: Int) {
+                    Timber.v("onPoiSearched result: $poiResult code: $resultCode")
                     if (resultCode == 1000) {
-                        it.onNext(poiResult)
+                        if (poiResult != null) {
+                            it.onNext(poiResult)
+                        }
                     } else {
                         val errorMessage = "SelectedLocation error. Please check the error code: https://lbs.amap.com/api/android-sdk/guide/map-tools/error-code"
                         Timber.e(errorMessage)

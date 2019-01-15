@@ -54,10 +54,8 @@
         <activity
             android:name=".activity.AutocompleteActivityKt"
             android:windowSoftInputMode="stateVisible" />
-        <activity
-            android:name=".activity.AutocompleteActivity"
-            android:windowSoftInputMode="stateVisible" />
         <activity android:name=".activity.PlacePickerActivity" />
+        <activity android:name=".activity.KotlinActivity" />
     </application>
 
 </manifest>

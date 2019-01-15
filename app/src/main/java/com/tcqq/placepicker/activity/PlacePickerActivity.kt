@@ -25,18 +25,18 @@ import com.amap.api.services.geocoder.GeocodeResult
 import com.amap.api.services.geocoder.GeocodeSearch
 import com.amap.api.services.geocoder.RegeocodeQuery
 import com.amap.api.services.geocoder.RegeocodeResult
+import com.github.florent37.expectanim.ExpectAnim
+import com.github.florent37.expectanim.core.Expectations.*
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.jakewharton.rxbinding3.view.clicks
 import com.tcqq.placepicker.R
+import com.tcqq.placepicker.enums.MapDimension
 import com.tcqq.placepicker.items.NearbyPlacesHeaderItem
 import com.tcqq.placepicker.items.NearbyPlacesItem
-import com.tcqq.placepicker.enums.MapDimension
 import com.tcqq.placepicker.model.LimitTime
 import com.tcqq.placepicker.model.SelectedLocation
 import com.tcqq.placepicker.utils.*
 import com.tcqq.placepicker.viewmodel.PlacePickerViewModel
-import com.github.florent37.expectanim.ExpectAnim
-import com.github.florent37.expectanim.core.Expectations.*
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.jakewharton.rxbinding2.view.RxView
 import com.trello.rxlifecycle3.android.ActivityEvent
 import eu.davidea.flexibleadapter.FlexibleAdapter
 import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager
@@ -266,8 +266,8 @@ class PlacePickerActivity : BaseActivity(),
                         0)
                 search_bar!!.layoutParams = lp
             }
-            RxView
-                    .clicks(search_bar!!)
+            search_bar!!
+                    .clicks()
                     .throttleFirst(LimitTime.CLICK_THROTTLE_SECONDS, TimeUnit.SECONDS)
                     .observeOn(AndroidSchedulers.mainThread())
                     .compose(bindUntilEvent(ActivityEvent.DESTROY))
@@ -753,7 +753,6 @@ class PlacePickerActivity : BaseActivity(),
 
     private fun openAutocomplete() {
         val intent = Intent(this, AutocompleteActivityKt::class.java)
-//        val intent = Intent(this, AutocompleteActivity::class.java)
         startActivityForResult(intent, REQUEST_AUTOCOMPLETE)
     }
 
