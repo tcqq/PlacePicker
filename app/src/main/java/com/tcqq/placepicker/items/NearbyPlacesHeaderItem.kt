@@ -14,7 +14,7 @@ import eu.davidea.flexibleadapter.items.IFlexible
 import eu.davidea.viewholders.FlexibleViewHolder
 
 /**
- * @author Alan Dreamer
+ * @author Alan Perry
  * @since 2018/09/26 Created
  */
 data class NearbyPlacesHeaderItem(val id: String) : AbstractFlexibleItem<NearbyPlacesHeaderItem.ViewHolder>() {

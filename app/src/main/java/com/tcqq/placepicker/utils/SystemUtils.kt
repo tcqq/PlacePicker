@@ -4,7 +4,7 @@ import android.content.Context
 import android.view.View
 
 /**
- * @author Alan Dreamer
+ * @author Alan Perry
  * @since 16/10/2018 Created
  */
 object SystemUtils {

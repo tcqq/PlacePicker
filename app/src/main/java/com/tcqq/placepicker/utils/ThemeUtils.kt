@@ -5,7 +5,7 @@ import android.util.TypedValue
 import androidx.annotation.Nullable
 
 /**
- * @author Alan Dreamer
+ * @author Alan Perry
  * @since 22/07/2018 Created
  */
 object ThemeUtils {

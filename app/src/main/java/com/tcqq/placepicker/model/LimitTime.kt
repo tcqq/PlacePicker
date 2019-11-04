@@ -1,7 +1,7 @@
 package com.tcqq.placepicker.model
 
 /**
- * @author Alan Dreamer
+ * @author Alan Perry
  * @since 2018-11-28 Created
  */
 object LimitTime {

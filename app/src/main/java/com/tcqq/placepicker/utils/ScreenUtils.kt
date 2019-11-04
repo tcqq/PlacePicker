@@ -5,7 +5,7 @@ import android.content.res.Configuration
 
 
 /**
- * @author Alan Dreamer
+ * @author Alan Perry
  * @since 27/09/2018 Created
  */
 object ScreenUtils {

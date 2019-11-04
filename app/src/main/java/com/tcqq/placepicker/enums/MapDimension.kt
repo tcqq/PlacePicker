@@ -1,7 +1,7 @@
 package com.tcqq.placepicker.enums
 
 /**
- * @author Alan Dreamer
+ * @author Alan Perry
  * @since 15/10/2018 Created
  */
 enum class MapDimension {

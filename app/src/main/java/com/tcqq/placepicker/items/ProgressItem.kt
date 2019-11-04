@@ -11,7 +11,7 @@ import eu.davidea.flexibleadapter.items.IFlexible
 import eu.davidea.viewholders.FlexibleViewHolder
 
 /**
- * @author Alan Dreamer
+ * @author Alan Perry
  * @since 2018-10-23 Created
  */
 data class ProgressItem(var status: StatusEnum = StatusEnum.MORE_TO_LOAD) : AbstractFlexibleItem<ProgressItem.ViewHolder>() {

@@ -4,7 +4,7 @@ import android.os.Build
 import java.util.*
 
 /**
- * @author Alan Dreamer
+ * @author Alan Perry
  * @since 2018/10/08 Created
  */
 object RomUtils {

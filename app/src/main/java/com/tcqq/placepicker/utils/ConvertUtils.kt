@@ -6,7 +6,7 @@ import java.text.NumberFormat
 
 
 /**
- * @author Alan Dreamer
+ * @author Alan Perry
  * @since 29/07/2018 Created
  */
 object ConvertUtils {

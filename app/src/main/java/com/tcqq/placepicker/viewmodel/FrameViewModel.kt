@@ -5,7 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 /**
- * @author Alan Dreamer
+ * @author Alan Perry
  * @since 19/08/2018 Created
  */
 class FrameViewModel : ViewModel() {
