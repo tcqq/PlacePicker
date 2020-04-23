@@ -4,7 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 /**
- * @author Alan Perry
+ * @author Perry Lance
  * @since 08/10/2018 Created
  */
 class PlacePickerViewModel: ViewModel() {

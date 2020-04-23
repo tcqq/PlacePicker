@@ -22,7 +22,7 @@ import com.trello.rxlifecycle3.components.support.RxAppCompatActivity
 /**
  * Base Activity class, used to initialize global configuration.
  *
- * @author Alan Perry
+ * @author Perry Lance
  * @since 12/03/2016 Created
  */
 abstract class BaseActivity : RxAppCompatActivity() {

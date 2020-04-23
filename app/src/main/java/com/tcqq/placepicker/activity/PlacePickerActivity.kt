@@ -53,7 +53,7 @@ import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 /**
- * @author Alan Perry
+ * @author Perry Lance
  * @since 2018/09/17 Created
  */
 class PlacePickerActivity : BaseActivity(),

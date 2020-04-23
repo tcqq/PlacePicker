@@ -18,7 +18,7 @@ import timber.log.Timber
 const val REQUEST_GAODE_MAP_PERMISSION = 1
 
 /**
- * @author Alan Perry
+ * @author Perry Lance
  * @since 11/10/2018 Created
  */
 class MainActivity : BaseActivity(),

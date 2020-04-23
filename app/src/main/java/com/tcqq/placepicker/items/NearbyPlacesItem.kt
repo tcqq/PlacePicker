@@ -11,7 +11,7 @@ import eu.davidea.flexibleadapter.items.IFlexible
 import eu.davidea.viewholders.FlexibleViewHolder
 
 /**
- * @author Alan Perry
+ * @author Perry Lance
  * @since 2018/09/22 Created
  */
 data class NearbyPlacesItem(val id: String,

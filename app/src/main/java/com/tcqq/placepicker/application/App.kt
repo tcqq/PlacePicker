@@ -8,7 +8,7 @@ import com.tcqq.placepicker.BuildConfig
 import timber.log.Timber
 
 /**
- * @author Alan Perry
+ * @author Perry Lance
  * @since 22/10/2016 Created
  */
 class App : Application() {

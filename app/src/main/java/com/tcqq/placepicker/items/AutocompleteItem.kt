@@ -10,7 +10,7 @@ import eu.davidea.flexibleadapter.items.IFlexible
 import eu.davidea.viewholders.FlexibleViewHolder
 
 /**
- * @author Alan Perry
+ * @author Perry Lance
  * @since 2018/10/23 Created
  */
 data class AutocompleteItem(val id: String,

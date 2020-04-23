@@ -9,7 +9,7 @@ import android.view.Surface;
 import android.view.WindowManager;
 
 /**
- * @author Alan Perry
+ * @author Perry Lance
  * @since 14/10/2018 Created
  */
 public class DeviceCompass implements SensorEventListener {
